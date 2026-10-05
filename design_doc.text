@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 steps 9-12 done (JavaScript port with shared test vectors; web UI in web/index.html; memo-split timer in js/timer.js; storage and statistics in js/storage.js and js/stats.js; deploy workflow and offline support). Site: https://philqiu1695.github.io/Blindcubing/ (live once GitHub Pages is enabled).
+Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 steps 9-12 done (JavaScript port with shared test vectors; web UI in web/index.html; memo-split timer in js/timer.js; storage and statistics in js/storage.js and js/stats.js; deploy workflow and offline support). Site live at https://philqiu1695.github.io/Blindcubing/. All 13 steps done; open: real-phone check, stretch goal (move animations).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -305,7 +305,7 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 
 
 
-13. **Deploy:** Publish the site. [BUILT - .github/workflows/pages.yml, web/sw.js; needs Pages source set to GitHub Actions in the repo settings; real-phone check still deferred]
+13. **Deploy:** Publish the site. [DONE - live at https://philqiu1695.github.io/Blindcubing/ via .github/workflows/pages.yml (Pages source: GitHub Actions), offline support in web/sw.js; real-phone check still deferred]
 
 * **Implementation:**
 * GitHub Pages from the `web/` folder of this repo, via a GitHub Actions workflow (Pages can only publish the repo root or /docs directly).

@@ -46,7 +46,7 @@ starting a new workflow step.
   checker and tracer (`memo.py`), net (`visual.py`), CLI trainer (`trainer.py`).
 - Memo rules are in "What is a valid memo?" in the design doc. `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
-- Phase 2 (website, steps 9-13): steps 9-13 built. The JS port in `web/js/` is kept
+- Phase 2 (website, steps 9-13): steps 9-13 done; the site is live. The JS port in `web/js/` is kept
   identical to Python via `web/test_vectors.json`. Every push to main deploys the site.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
