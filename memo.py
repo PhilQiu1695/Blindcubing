@@ -124,3 +124,68 @@ def check_memo(cube: Cube3BLD, edge_memo: str, corner_memo: str) -> MemoCheck:
         corner_count=counts['corner'],
         messages=messages,
     )
+
+
+def _format_memo(letters: list, in_place: list) -> str:
+    """Letters in pairs separated by spaces, then each in-place block in brackets."""
+    pairs = [''.join(letters[i:i + 2]) for i in range(0, len(letters), 2)]
+    return ' '.join(pairs + [f"({block})" for block in in_place])
+
+
+def trace(cube: Cube3BLD, kind: str) -> str:
+    """
+    Trace the reference memo for edges or corners using the JB rules:
+    - Start from the buffer's U sticker and follow targets until a buffer sticker.
+    - Break into each remaining cycle with a lowercase start letter and record the
+      lowercase closing letter (any sticker of the start piece).
+    - Corners start small cycles from the U/D sticker. Among unsolved pieces, the
+      one with the lowest start letter is broken into first.
+    - Pieces in place but flipped/twisted become 2-letter blocks in brackets at the end.
+    """
+    attr, slot_faces, letter_map, buffer_slot, _ = _piece_tables(kind)
+    get = cube.get_edge_letter if kind == 'edge' else cube.get_corner_letter
+    home = {letter: (slot, face) for slot, faces in letter_map.items() for face, letter in faces.items()}
+    state = getattr(cube, attr)
+
+    letters, in_place = [], []
+    recorded = {buffer_slot}
+
+    # Main cycle from the buffer's U sticker
+    pos = (buffer_slot, 'U')
+    while not Cube3BLD.is_buffer_letter(get(*pos)):
+        letter = get(*pos)
+        letters.append(letter)
+        pos = home[letter]
+        recorded.add(pos[0])
+
+    # Small cycles, broken into in order of their start letter
+    start_face = {slot: slot_faces[slot][0] for slot in letter_map}  # U/D face first for corners
+    for slot in sorted(letter_map, key=lambda s: letter_map[s][start_face[s]]):
+        piece, ori = state[slot]
+        if slot in recorded or (piece, ori) == (slot, 0):
+            continue
+        recorded.add(slot)
+        start = (slot, start_face[slot])
+        start_letter = letter_map[slot][start_face[slot]].lower()
+
+        if piece == slot:
+            in_place.append(start_letter + get(*start).lower())
+            continue
+
+        letters.append(start_letter)
+        pos = start
+        while True:
+            letter = get(*pos)
+            pos = home[letter]
+            if pos[0] == slot:
+                letters.append(letter.lower())
+                break
+            letters.append(letter)
+            recorded.add(pos[0])
+
+    return _format_memo(letters, in_place)
+
+
+def trace_memo(cube: Cube3BLD) -> tuple:
+    """Reference (edge memo, corner memo) for a scrambled cube."""
+    return trace(cube, 'edge'), trace(cube, 'corner')

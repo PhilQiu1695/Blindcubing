@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Steps 1-5 done (data structures, move engine + parser, reference cross-check, memo spec, memo checker in memo.py). Next: Step 6 (cycle tracer).
+Current stage: Steps 1-6 done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py). Next: Step 7 (2D net visualizer).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -149,12 +149,12 @@ Validate user-submitted memo strings by simulating them on the scrambled cube.
 
 
 
-6. **Develop Cycle Tracing Engine:** Core algorithmic challenge.
+6. **Develop Cycle Tracing Engine:** Core algorithmic challenge. [DONE - memo.trace_memo]
 Implement blindfolded cycle tracing logic for edges and corners using JB rules.
 
 * **Implementation:**
 * **Main Loop:** Read the piece in the buffer slot. If it is not the buffer piece, append target letter to memo and jump to that target's slot.
-* **Cycle Breaks:** When returning to the buffer while unsolved pieces remain, pick the first unrecorded piece in canonical order as a new cycle break.
+* **Cycle Breaks:** When returning to the buffer while unsolved pieces remain, break into the unrecorded piece with the lowest start letter (alphabetical) as a new cycle break.
 * **Rule Enforcement:** For corners, always break cycles using the top/bottom (`U`/`D` face) sticker first.
 * **In-place Flips/Twists:** Handle them with the notation decided in Step 4.
 

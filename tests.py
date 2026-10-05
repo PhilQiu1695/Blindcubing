@@ -1,7 +1,7 @@
 import random
 import unittest
 from cube_state import Cube3BLD
-from memo import check_memo, parse_memo
+from memo import check_memo, parse_memo, trace_memo
 
 class TestCube3BLDStep1(unittest.TestCase):
     def setUp(self):
@@ -404,6 +404,85 @@ class TestCube3BLDStep5(unittest.TestCase):
         before = (list(cube.edges), list(cube.corners))
         check_memo(cube, TUTORIAL_CASES[0][1], TUTORIAL_CASES[0][2])
         self.assertEqual((cube.edges, cube.corners), before)
+
+
+
+def random_scramble(rng, length=25):
+    return ' '.join(rng.choice('UDLRFB') + rng.choice(['', "'", '2']) for _ in range(length))
+
+
+class TestCube3BLDStep6(unittest.TestCase):
+    """Cycle tracer: its memo must always be accepted by the checker."""
+
+    def test_random_scrambles_traced_memo_solves(self):
+        """Property test: 1000 random scrambles, traced memo passes the checker."""
+        rng = random.Random(6)
+        for _ in range(1000):
+            scramble = random_scramble(rng)
+            cube = Cube3BLD()
+            cube.scramble(scramble)
+            edges, corners = trace_memo(cube)
+            result = check_memo(cube, edges, corners)
+            self.assertTrue(result.correct, f"{scramble}: {edges} | {corners} {result.messages}")
+
+    def test_tutorial_cases(self):
+        """Cases 1-3 have no cycle-break choices and match exactly; 4-5 must be valid."""
+        for n, (scramble, edges, corners) in enumerate(TUTORIAL_CASES, 1):
+            with self.subTest(case=n):
+                cube = Cube3BLD()
+                cube.scramble_wca(scramble)
+                traced = trace_memo(cube)
+                if n <= 3:
+                    self.assertEqual(traced, (edges, corners))
+                self.assertTrue(check_memo(cube, *traced).correct)
+                letters = lambda memo: sum(ch.isalpha() for ch in memo)
+                self.assertEqual((letters(traced[0]), letters(traced[1])),
+                                 (letters(edges), letters(corners)))
+
+    def test_single_swap_targets(self):
+        cube = Cube3BLD()
+        cube.scramble("U2")
+        # Edges: UF<->UB gives E, then UL<->UR is a small cycle c G c.
+        # Corners: UFL<->UBR gives G, then UBL<->UFR is a small cycle d J d.
+        self.assertEqual(trace_memo(cube), ("Ec Gc", "Gd Jd"))
+        self.assertTrue(check_memo(cube, *trace_memo(cube)).correct)
+        cube = Cube3BLD()
+        cube.scramble("R2")
+        self.assertTrue(check_memo(cube, *trace_memo(cube)).correct)
+        self.assertEqual(trace_memo(Cube3BLD()), ("", ""))
+
+    def test_letter_count_rule(self):
+        """Letters = 11 (or 7) - solved pieces + small cycles (in-place blocks count as one)."""
+        rng = random.Random(7)
+        for _ in range(300):
+            cube = Cube3BLD()
+            cube.scramble(random_scramble(rng))
+            for memo, state, buf, total in ((trace_memo(cube)[0], cube.edges, 2, 11),
+                                            (trace_memo(cube)[1], cube.corners, 3, 7)):
+                solved = sum(1 for s, p in enumerate(state) if s != buf and p == (s, 0))
+                small_cycles = sum(1 for ch in memo if ch.islower()) // 2
+                self.assertEqual(sum(ch.isalpha() for ch in memo), total - solved + small_cycles, memo)
+
+    def test_buffer_in_place(self):
+        """Buffer piece already in its slot (solved, flipped, twisted): start a small cycle."""
+        rng = random.Random(8)
+        found = set()
+        while len(found) < 4:
+            cube = Cube3BLD()
+            cube.scramble(random_scramble(rng))
+            edges, corners = trace_memo(cube)
+            for kind, memo, (piece, ori), buf in (('edge', edges, cube.edges[2], 2),
+                                                  ('corner', corners, cube.corners[3], 3)):
+                if piece == buf and memo:
+                    found.add((kind, ori != 0))
+                    self.assertTrue(memo[0].islower(), f"{kind} memo should start a small cycle: {memo}")
+                    self.assertTrue(check_memo(cube, edges, corners).correct)
+
+    def test_closing_letter_can_differ(self):
+        """Case 4 corners: small cycle d Z e closes on a different UBL sticker."""
+        cube = Cube3BLD()
+        cube.scramble_wca(TUTORIAL_CASES[3][0])
+        self.assertIn("dZ e", trace_memo(cube)[1])
 
 
 if __name__ == '__main__':
