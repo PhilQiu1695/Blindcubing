@@ -5,6 +5,17 @@ import { generateScramble } from './scramble.js';
 import { netSvg, scrambleError } from './render.js';
 import { createCube3D } from './cube3d.js';
 import { BldTimer, buildAttempt, formatTime } from './timer.js';
+import { computeStats, formatPercent, formatStat } from './stats.js';
+import { exportCsv, exportJson, importJson, loadHistory, nextAttemptNumber, saveHistory } from './storage.js';
+
+// localStorage can be unavailable (privacy settings); fall back to a store that never keeps anything
+const storage = (() => {
+  try {
+    return window.localStorage;
+  } catch {
+    return { getItem: () => null, setItem: () => { throw new Error('storage unavailable'); } };
+  }
+})();
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,7 +27,7 @@ const state = {
   letters: false,
   showSolved: false,
   attemptSaved: false, // one timed attempt per scramble
-  history: [],         // timed attempt records (saved to storage in step 12)
+  history: loadHistory(storage), // timed attempt records, oldest first
   lastTimes: null,     // times kept on screen after an attempt is saved
   idleNote: null,      // status message shown while the timer is idle
 };
@@ -69,11 +80,91 @@ function showResult(kind, html) {
   box.hidden = false;
 }
 
-// Score counts timed attempts only: memos correct / attempts saved
-function updateScore() {
-  const correct = state.history.filter((a) => a.memoCorrect).length;
-  $('score').textContent = `${correct}/${state.history.length}`;
+// ---- Statistics & history ----
+
+function statTile(label, value, sub = '') {
+  return `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div>`
+    + (sub ? `<div class="stat-sub">${sub}</div>` : '') + '</div>';
 }
+
+function renderStats() {
+  const s = computeStats(state.history);
+  $('stats').innerHTML = [
+    statTile('Attempts', String(s.attempts), `${s.solved} solved`),
+    statTile('Success rate', formatPercent(s.successRate)),
+    statTile('Best', formatStat(s.best)),
+    statTile('mo3', formatStat(s.mo3.current), `best ${formatStat(s.mo3.best)}`),
+    statTile('ao12', formatStat(s.ao12.current), `best ${formatStat(s.ao12.best)}`),
+    statTile('Memo accuracy', formatPercent(s.memoAccuracy)),
+  ].join('');
+
+  const rows = [...state.history].reverse().map((a) => {
+    const date = new Date(a.date).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+    const details = `<details><summary>Show</summary><dl>`
+      + `<dt>Scramble</dt><dd>${escapeHtml(a.scramble)}</dd>`
+      + `<dt>Your edges</dt><dd>${escapeHtml(a.memo.edges) || '-'}</dd>`
+      + `<dt>Your corners</dt><dd>${escapeHtml(a.memo.corners) || '-'}</dd>`
+      + `<dt>Ref. edges</dt><dd>${escapeHtml(a.reference.edges) || '(solved)'}</dd>`
+      + `<dt>Ref. corners</dt><dd>${escapeHtml(a.reference.corners) || '(solved)'}</dd>`
+      + `</dl></details>`;
+    return `<tr><td>${a.number}</td>`
+      + `<td class="${a.result === 'DNF' ? 'dnf' : 'ok'}">${a.result === 'DNF' ? 'DNF' : 'Solved'}</td>`
+      + `<td>${formatTime(a.totalTime)}</td><td>${formatTime(a.memoTime)}</td><td>${formatTime(a.execTime)}</td>`
+      + `<td>${a.memoCorrect ? 'correct' : 'wrong'}</td><td>${escapeHtml(date)}</td><td>${details}</td></tr>`;
+  });
+  $('history').tBodies[0].innerHTML = rows.join('');
+  $('history').hidden = state.history.length === 0;
+  $('history-empty').hidden = state.history.length > 0;
+}
+
+function persist() {
+  if (!saveHistory(storage, state.history)) {
+    $('history-note').textContent = 'Your browser blocked saving, so history will be lost on reload. Export to keep it.';
+  }
+}
+
+function download(filename, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const stamp = () => new Date().toISOString().slice(0, 10);
+
+$('export-json').addEventListener('click', () => {
+  download(`bld-history-${stamp()}.json`, exportJson(state.history), 'application/json');
+});
+$('export-csv').addEventListener('click', () => {
+  download(`bld-history-${stamp()}.csv`, exportCsv(state.history), 'text/csv');
+});
+$('import-json').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  event.target.value = ''; // allow importing the same file again
+  if (!file) return;
+  try {
+    const attempts = importJson(await file.text());
+    if (state.history.length && !confirm(`Replace your ${state.history.length} saved attempts with ${attempts.length} from ${file.name}?`)) return;
+    state.history = attempts;
+    persist();
+    renderStats();
+    $('history-note').textContent = `Imported ${attempts.length} attempts from ${file.name}.`;
+  } catch (err) {
+    $('history-note').textContent = `Import failed: ${err.message}.`;
+  }
+});
+$('clear-history').addEventListener('click', () => {
+  if (!state.history.length) return;
+  if (!confirm(`Delete all ${state.history.length} saved attempts? Export first if you want to keep them.`)) return;
+  state.history = [];
+  persist();
+  renderStats();
+  $('history-note').textContent = 'History cleared.';
+});
 
 /** Bad letters: ask again instead of scoring (as in the CLI). Returns true if the memo is usable. */
 function memoLettersValid(edges, corners) {
@@ -176,12 +267,13 @@ function saveAttempt(solved) {
   if (!memoLettersValid(edges, corners)) return;
 
   const attempt = buildAttempt({
-    number: state.history.length + 1, scramble: state.scramble, cube: state.cube,
+    number: nextAttemptNumber(state.history), scramble: state.scramble, cube: state.cube,
     edges, corners, times: timer.times(), solved,
   });
   state.history.push(attempt);
   state.attemptSaved = true;
-  updateScore();
+  persist();
+  renderStats();
 
   const times = `<dl><dt>Total</dt><dd>${formatTime(attempt.totalTime)}</dd>`
     + `<dt>Memo</dt><dd>${formatTime(attempt.memoTime)}</dd>`
@@ -283,3 +375,5 @@ setScramble(fromUrl !== null && !scrambleError(fromUrl) ? fromUrl.trim().replace
 if (initial.view) document.querySelector(`[data-view="${initial.view}"]`).click();
 if (initial.stickers) document.querySelector(`[data-stickers="${initial.stickers}"]`).click();
 if (initial.state) document.querySelector(`[data-state="${initial.state}"]`).click();
+
+renderStats();

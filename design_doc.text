@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 steps 9-11 done (JavaScript port with shared test vectors; web UI in web/index.html; memo-split timer in js/timer.js). Next: step 12 (storage and statistics).
+Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 steps 9-12 done (JavaScript port with shared test vectors; web UI in web/index.html; memo-split timer in js/timer.js; storage and statistics in js/storage.js and js/stats.js). Next: step 13 (deploy).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -279,7 +279,7 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 
 
 
-12. **Results, Storage & Statistics:** Session history and stats.
+12. **Results, Storage & Statistics:** Session history and stats. [DONE - js/stats.js, js/storage.js (tested in Node), Statistics & history panel in the page]
 
 * **Implementation:**
 * Each attempt record: attempt number (saved attempts only), scramble moves, user memo input (edges, corners), reference memo (edges, corners), memo time, execution time, total time, solved/DNF, memo correct (true/false), date.
@@ -290,11 +290,17 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 * mo3 = mean of the last 3 attempts; any DNF makes it DNF.
 * ao12 = last 12 attempts, drop the best and worst, mean of the remaining 10; one DNF counts as the worst, two or more make it DNF.
 * Show current and best mo3 / ao12.
+* Also shown: number of attempts and memo accuracy (memos correct / attempts).
+* Averages are rounded to 0.01 s. Best single is "-" until the first solve.
+* Import accepts the JSON export (or a bare list of attempts), validates every record, and replaces the current history after confirmation. CSV is export-only, for spreadsheets.
+* Clear history (with confirmation). New attempt numbers continue from the highest saved number.
+* If the browser blocks storage, the page still works and warns that history will be lost on reload.
 
 
 * **Verification Check:**
 * Unit tests for every stat, including DNF cases and fewer than 3 / 12 attempts (shown as "-").
 * Records survive a page reload; export then import gives identical history.
+* Session score from step 11 is replaced by these statistics.
 
 
 

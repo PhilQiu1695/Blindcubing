@@ -56,7 +56,6 @@
       </form>
 
       <div id="result" class="result" aria-live="polite" hidden></div>
-      <p class="score">Session score (timed attempts, memo correct): <span id="score">0/0</span></p>
     </section>
 
     <section class="panel" aria-labelledby="cube-heading">
@@ -81,6 +80,27 @@
         <p class="hint">Drag or swipe to rotate.</p>
       </div>
       <div id="view-net" class="view-net" hidden></div>
+    </section>
+
+    <section class="panel wide" aria-labelledby="stats-heading">
+      <h2 id="stats-heading">Statistics &amp; history</h2>
+      <div id="stats" class="stats"></div>
+      <div class="row history-actions">
+        <button id="export-json" type="button">Export JSON</button>
+        <button id="export-csv" type="button">Export CSV</button>
+        <label class="file-button">Import JSON<input id="import-json" type="file" accept=".json,application/json"></label>
+        <button id="clear-history" type="button" class="danger-outline">Clear history</button>
+      </div>
+      <p id="history-note" class="hint" role="status"></p>
+      <div class="table-wrap">
+        <table id="history" class="history">
+          <thead>
+            <tr><th>#</th><th>Result</th><th>Total</th><th>Memo</th><th>Execution</th><th>Memo check</th><th>Date</th><th>Details</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="history-empty" class="hint">No timed attempts yet. Use the timer above, then save as Solved or DNF.</p>
     </section>
   </main>
 
