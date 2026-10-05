@@ -6,6 +6,8 @@ The full spec and the step-by-step plan are in `design_doc.text`. Read it before
 starting a new workflow step.
 
 ## Files
+- `web/js/`: JavaScript port (`cube.js`, `memo.js`, `visual.js`, `scramble.js`); `web/tests/`: Node tests
+- `export_vectors.py`: writes `web/test_vectors.json` from the Python code
 - `memo.py`: memo parser and checker (`parse_memo`, `execute_memo`, `check_memo`) and cycle tracer (`trace_memo`)
 - `trainer.py`: CLI trainer (`generate_scramble`, `Trainer`); I/O is injectable for tests
 - `visual.py`: 2D net (`get_face_grid`, `render_net`, `print_cube_state`; modes letter/face/colour)
@@ -16,7 +18,9 @@ starting a new workflow step.
 
 ## Commands
 - Run trainer: `python3 trainer.py`
-- Run tests: `python3 tests.py` (Python 3.11, standard library only, no dependencies)
+- Run tests: `python3 tests.py`
+- JS tests: `cd web && node --test` (Node 24, no dependencies)
+- Regenerate shared test vectors: `python3 export_vectors.py` (Python 3.11, standard library only, no dependencies)
 
 ## Cube model
 - Hold: **U = Green, F = Red, R = White, B = Orange, L = Yellow, D = Blue**.
@@ -35,8 +39,8 @@ starting a new workflow step.
   checker and tracer (`memo.py`), net (`visual.py`), CLI trainer (`trainer.py`).
 - Memo rules are in "What is a valid memo?" in the design doc. `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
-- Next: Phase 2 (website, steps 9-13), starting with step 9: JavaScript port in
-  `web/`, kept identical to Python via `web/test_vectors.json`.
+- Phase 2 (website, steps 9-13): step 9 done. The JS port in `web/js/` is kept
+  identical to Python via `web/test_vectors.json`. Next: step 10, web UI.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules
@@ -44,6 +48,8 @@ starting a new workflow step.
   tests must pass; "N turns = identity" tests are not enough on their own.
 - Get expected sticker values from a physical cube or the sticker model, never
   from the code's own output.
+- Python is the reference. After changing `cube_state.py`, `memo.py` or `visual.py`,
+  mirror the change in `web/js/`, run `python3 export_vectors.py`, then both test suites.
 - Keep `cube_state.py` free of I/O. Put the CLI, visualizer and trainer loop in
   separate modules.
 - New behavior gets a test in `tests.py`, in the class for its workflow step.

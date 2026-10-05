@@ -632,5 +632,19 @@ class TestCube3BLDStep8(unittest.TestCase):
         self.assertEqual(trainer.attempts, 0)
 
 
+
+class TestSharedVectors(unittest.TestCase):
+    """web/test_vectors.json must match the current Python code (the JS port is tested against it)."""
+
+    def test_vectors_file_is_up_to_date(self):
+        import json
+        from export_vectors import OUTPUT, build_vectors
+        with open(OUTPUT, encoding='utf-8') as f:
+            on_disk = json.load(f)
+        current = json.loads(json.dumps(build_vectors(), ensure_ascii=False))
+        self.assertTrue(on_disk == current,
+                        "web/test_vectors.json is stale: run `python3 export_vectors.py`, then the JS tests")
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

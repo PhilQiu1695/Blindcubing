@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Next: Phase 2, step 9 (JavaScript port).
+Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 step 9 (JavaScript port in web/js, shared test vectors) done. Next: step 10 (web UI).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -216,17 +216,17 @@ Decisions:
 * Statistics: success rate, best overall, mo3, ao12.
 * Storage: every attempt saves its scramble number, scramble moves, user memo input, reference memo and times.
 
-9. **Port Engine to JavaScript & Shared Test Vectors:** Keeps both versions identical.
+9. **Port Engine to JavaScript & Shared Test Vectors:** Keeps both versions identical. [DONE - web/js, export_vectors.py, run JS tests with cd web && node --test]
 Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript modules in `web/`.
 
 * **Implementation:**
-* Plain JavaScript ES modules, no build step (proposal; switch to TypeScript if wanted).
+* Plain JavaScript ES modules, no build step: web/js/cube.js, memo.js, visual.js, plus scramble.js (port of the trainer's scramble generator).
 * Add `export_vectors.py`: Python generates `web/test_vectors.json` with a few hundred seeded scrambles and, for each, every sticker letter, the traced memo, and checker results for correct and wrong memos (tutorial cases included).
 
 
 * **Verification Check:**
 * JS tests (`node --test`) reproduce every value in `test_vectors.json` exactly.
-* Rerun `export_vectors.py` after any Python change; the JS tests must still pass.
+* Rerun `export_vectors.py` after any Python change; the JS tests must still pass. A Python test fails if test_vectors.json is out of date.
 
 
 
