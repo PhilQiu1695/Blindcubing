@@ -14,14 +14,15 @@ Problems/modules
 4. memo correctness check, any valid memo will do(most important)
 
 What is a valid memo?
-1. Start at buffer position,
+1. Start at buffer position: edges start from the UF top (U face) sticker, corners start from the UFL top (U face) sticker.
 2. Note the sticker in this position and record sticker letter 
 #position letter: what the letter on the face would be for a solved cube. 
 #sticker letter: the actual letter on the face in the scramble)
 3. Go to the position the letter is supposed to be
 4. Repeat steps 2-3 until hit buffer sticker
-5. For pieces in right place but wrong orientation, put all the letters at the end of its respective memo as a group
-#Example corner memo: Corners MP RK dZ e GHI (lowercase d and e mark cycle, two letters a group, GHI at the end marks the wrongly oriented piece)
+5. For pieces in right place but wrong orientation (flipped edge / twisted corner): treat each one as a small cycle (steps 8-9), giving 2 lowercase letters. Put these blocks at the end of their section, each in its own brackets.
+#The 2 letters show the direction: e.g. UBR twisted clockwise reads gh, counter-clockwise reads gi.
+#Example corner memo: Corners MP RK dZ e (gh) (lowercase d and e mark a small cycle, (gh) is the UBR corner twisted clockwise in place)
 6. If no unrecorded pieces (edges or corners): FINISH
 7. For unrecorded: exist small cycles
 8. start at arbitrary unrecorded piece, record the position letter in lowercase, not the sticker letter.
@@ -32,7 +33,9 @@ What is a valid memo?
 A standard edge memo should have 11 letters(corner 7), add one for each small cycle, and subtract one for each piece in its right position
 When starting to record cycles for corners, have the first position letter be the one on the top/bottom face of the cube i.e. blue/green
 
-Parity check: to be implemented
+Parity: no separate notation. It is implied by the letter count: an odd number of letters (brackets included) means parity. Edge and corner counts are always both odd or both even; a mismatch means the memo is wrong.
+
+Memo format: letters in pairs separated by single spaces (e.g. MP RK dZ e), with in-place blocks last in brackets. The checker decides right/wrong from the letters; formatting mistakes get a warning, not a fail.
 
 Results: 2 strings for edge + corner
 
@@ -111,18 +114,17 @@ A move engine can pass every self-consistency test and still be wrong (this happ
 
 
 
-4. **Decide the Memo Spec:** Steps 5-8 all depend on these rules. [IN PROGRESS - 3 decided, 3 open]
+4. **Decide the Memo Spec:** Steps 5-8 all depend on these rules. [DONE]
 Write down exactly what a valid memo string looks like before building the checker.
 
 * **Decided:**
+* Buffer start: edges from the UF top (U face) sticker, corners from the UFL top (U face) sticker.
 * Small cycles: the start and closing letters are always written in lowercase. They may be different stickers of the same piece (see "What is a valid memo?" step 9).
 * Buffer piece already in the buffer slot (solved, flipped or twisted): start a small cycle straight away.
+* Flipped edges / twisted corners in place: written as a 2-letter small cycle, in brackets, at the end of the section (e.g. clockwise UBR = (gh)).
+* Format: letter pairs separated by single spaces; bracket blocks last. Formatting mistakes are warnings, not fails.
+* Parity: no notation; implied by an odd letter count. Edge and corner counts must have the same parity.
 * Scramble orientation: scramble in the WCA hold (white top, green front) and memo in green top / red front. Translate moves U->R, F->U, R->F, D->L, B->D, L->B.
-
-* **Open:**
-* Input format: allowed separators (spaces, letter pairs).
-* Twisted corners / flipped edges in place: written as small cycles (e.g. `gh`), or a separate group at the end. The notation must say which way the piece is twisted.
-* Parity: what the parity algorithm physically swaps, and how it changes the memo. Edge and corner parity are always equal.
 
 
 * **Verification Check:**

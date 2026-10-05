@@ -233,5 +233,96 @@ class TestCube3BLDReference(unittest.TestCase):
             self.assert_matches_model(moves)
 
 
+
+# Verified cases from the Bilibili JB tutorial (photos in test-cases/caseN.png, memoN.png).
+# Scrambles are in the WCA hold; memos use our notation (pairs, lowercase small-cycle
+# start/closing letters, in-place pieces in brackets at the end).
+TUTORIAL_CASES = [
+    ("L B' R' F2 R2 D R' F' L U' F' R2 L2 F D2 F R2 B' L2 F2 L2",
+     "HE PK JZ CM RW", "YG MJ QS"),
+    ("F' L2 R2 F2 R2 B' U2 L2 U' L R' F2 D' U2 F2 D B' U2 L",
+     "HQ PC YN LS WE A", "HZ DW TO L"),
+    ("F2 R D L D' B' L2 F R' F L2 U2 F2 B U2 B' D2 L2 U2",
+     "ZB AE TX Mc Rc (kl)", "MQ GJ ZE (rs)"),
+    ("D2 L F2 U2 R2 D2 L B' L' D' U R2 D' B' U2 L D F",
+     "TN Fc KH Zc qB WA q", "MP RK dZ e (gh)"),
+    ("B2 U2 L2 B L2 D2 L2 F2 U' B2 F L F' U B L' U' B' F",
+     "cA cg KY ge NQ eb TX p", "GQ dN fj YR k"),
+]
+
+
+class TestTutorialCases(unittest.TestCase):
+    """Check the verified tutorial memos against the cube state, letter by letter."""
+
+    def follow_memo(self, cube, kind, memo):
+        """Walk every cycle in a memo and assert each letter matches the cube."""
+        if kind == 'edge':
+            get, lmap, faces, buf, state = (cube.get_edge_letter, Cube3BLD.EDGE_LETTER_MAP,
+                                            Cube3BLD.EDGE_SLOT_FACES, Cube3BLD.EDGE_BUFFER_SLOT, cube.edges)
+        else:
+            get, lmap, faces, buf, state = (cube.get_corner_letter, Cube3BLD.CORNER_LETTER_MAP,
+                                            Cube3BLD.CORNER_SLOT_FACES, Cube3BLD.CORNER_BUFFER_SLOT, cube.corners)
+        home = {letter: (slot, face) for slot, d in lmap.items() for face, letter in d.items()}
+
+        main = memo.split('(')[0].replace(' ', '')
+        brackets = [b.strip(') ') for b in memo.split('(')[1:]]
+        covered = {buf}
+
+        # Main cycle: uppercase letters before the first small cycle
+        i, pos = 0, (buf, 'U')
+        while i < len(main) and main[i].isupper():
+            self.assertEqual(get(*pos), main[i], f"{kind} main cycle letter {i}")
+            pos = home[main[i]]
+            covered.add(pos[0])
+            i += 1
+        self.assertTrue(Cube3BLD.is_buffer_letter(get(*pos)), f"{kind} main cycle should end at buffer")
+
+        # Small cycles: lowercase start, uppercase targets, lowercase closing letter
+        while i < len(main):
+            start = home[main[i].upper()]
+            self.assertTrue(main[i].islower(), f"{kind} small cycle must start lowercase")
+            pos, i = start, i + 1
+            covered.add(start[0])
+            while main[i].isupper():
+                self.assertEqual(get(*pos), main[i])
+                pos = home[main[i]]
+                covered.add(pos[0])
+                i += 1
+            self.assertEqual(get(*pos), main[i].upper(), f"{kind} small cycle closing letter")
+            self.assertEqual(home[main[i].upper()][0], start[0], "closing letter on start piece")
+            i += 1
+
+        # In-place pieces: start sticker position shows the closing sticker
+        for block in brackets:
+            slot, face = home[block[0].upper()]
+            self.assertEqual(state[slot][0], slot, f"({block}) piece must be in place")
+            self.assertEqual(get(slot, face), block[1].upper(), f"({block}) orientation")
+            covered.add(slot)
+
+        unsolved = {s for s, (p, o) in enumerate(state) if (p, o) != (s, 0)}
+        self.assertTrue(unsolved <= covered, f"{kind} memo misses slots {unsolved - covered}")
+
+    def test_tutorial_memos_match_cube(self):
+        for n, (scramble, edges, corners) in enumerate(TUTORIAL_CASES, 1):
+            with self.subTest(case=n):
+                cube = Cube3BLD()
+                cube.scramble_wca(scramble)
+                self.follow_memo(cube, 'edge', edges)
+                self.follow_memo(cube, 'corner', corners)
+
+    def test_parity_matches(self):
+        """Edge and corner letter counts are both odd or both even."""
+        for n, (_, edges, corners) in enumerate(TUTORIAL_CASES, 1):
+            count = lambda memo: sum(ch.isalpha() for ch in memo)
+            self.assertEqual(count(edges) % 2, count(corners) % 2, f"case {n}")
+
+    def test_wca_translation(self):
+        """WCA-hold U turns the white face, which is R in the blindfold hold."""
+        c1, c2 = Cube3BLD(), Cube3BLD()
+        c1.scramble_wca("U F' R2 D B L")
+        c2.scramble("R U' F2 L D B")
+        self.assertEqual((c1.edges, c1.corners), (c2.edges, c2.corners))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

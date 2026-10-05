@@ -121,6 +121,10 @@ class Cube3BLD:
 
     MOVE_PATTERN = re.compile(r"^([UDLRFB])(2|')?$")
 
+    # Face turned in the blindfold hold for each face turned in the WCA hold
+    # (WCA: white top, green front -> blindfold: green top, red front)
+    WCA_TO_HOLD = {'U': 'R', 'F': 'U', 'R': 'F', 'D': 'L', 'B': 'D', 'L': 'B'}
+
     def __init__(self):
         # 12 edge slots: initialized to home piece and orientation 0 -> (piece_id, orientation)
         self.edges = [(i, 0) for i in range(12)]
@@ -204,3 +208,8 @@ class Cube3BLD:
         """Execute a space-separated string of moves on the cube state."""
         for move in scramble_str.strip().split():
             self.apply_move(move)
+
+    def scramble_wca(self, scramble_str: str):
+        """Execute a scramble written for the WCA hold, translated to the blindfold hold."""
+        for move in scramble_str.strip().split():
+            self.apply_move(self.WCA_TO_HOLD.get(move[0], move[0]) + move[1:])

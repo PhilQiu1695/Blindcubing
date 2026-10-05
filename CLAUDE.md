@@ -8,6 +8,7 @@ starting a new workflow step.
 ## Files
 - `cube_state.py`: the `Cube3BLD` class (state, letter maps, move engine, scramble parser)
 - `tests.py`: unittest suite, with one test class per workflow step, plus `StickerModel`, an independent reference simulator
+- `test-cases/`: tutorial scramble/memo photos (caseN.png, memoN.png); transcribed in `TUTORIAL_CASES` in `tests.py`
 - `design_doc.text`: spec, memo rules, letter scheme, and the 8-step workflow
 
 ## Commands
@@ -16,7 +17,7 @@ starting a new workflow step.
 ## Cube model
 - Hold: **U = Green, F = Red, R = White, B = Orange, L = Yellow, D = Blue**.
   Scrambles written for the WCA hold (white top, green front) need translating:
-  U→R, F→U, R→F, D→L, B→D, L→B.
+  U→R, F→U, R→F, D→L, B→D, L→B. Use `Cube3BLD.scramble_wca()` for these.
 - State: `edges[slot] = (piece_id, ori)` and `corners[slot] = (piece_id, ori)`.
   A piece id is the index of its home slot.
 - Buffers: edge UF (slot 2), corner UFL (slot 3).
@@ -28,10 +29,8 @@ starting a new workflow step.
 ## Status (as of 2026-10-05)
 - Workflow steps 1-3 are done: data structures, move engine and parser, and the
   sticker-model cross-check (`TestCube3BLDReference`).
-- Next is step 4, the memo spec. Small-cycle letters, buffer-in-place and scramble
-  orientation are decided. The parity rule, twist/flip notation and memo
-  format are still undecided. Don't build steps 5-6 until the design doc
-  records them.
+- Step 4 (memo spec) is decided; see "What is a valid memo?" and workflow step 4
+  in the design doc. Next is step 5, the memo executor/checker.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules
