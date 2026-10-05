@@ -2,6 +2,7 @@ import random
 import unittest
 from cube_state import Cube3BLD
 from memo import check_memo, parse_memo, trace_memo
+from visual import get_face_grid, render_net
 
 class TestCube3BLDStep1(unittest.TestCase):
     def setUp(self):
@@ -483,6 +484,60 @@ class TestCube3BLDStep6(unittest.TestCase):
         cube = Cube3BLD()
         cube.scramble_wca(TUTORIAL_CASES[3][0])
         self.assertIn("dZ e", trace_memo(cube)[1])
+
+
+
+class TestCube3BLDStep7(unittest.TestCase):
+    """2D net visualizer."""
+
+    # Letter table from the design doc ('#' = buffer, '·' = centre)
+    DOC_TABLE = {
+        'U': ["DEG", "C·G", "##J"],
+        'F': ["##L", "S·Q", "NJY"],
+        'R': ["KHI", "R·Z", "ZPS"],
+        'B': ["HFF", "Y·W", "TNP"],
+        'L': ["ED#", "X·T", "QLM"],
+        'D': ["WAX", "K·B", "OMR"],
+    }
+
+    def test_solved_letters_match_design_doc_table(self):
+        for face, rows in self.DOC_TABLE.items():
+            grid = get_face_grid(Cube3BLD(), face, 'letter')
+            self.assertEqual([''.join(r) for r in grid], rows, face)
+
+    def test_solved_face_and_colour_modes(self):
+        colours = {'U': 'G', 'F': 'R', 'R': 'W', 'B': 'O', 'L': 'Y', 'D': 'B'}
+        for face, colour in colours.items():
+            self.assertEqual(get_face_grid(Cube3BLD(), face, 'face'), [[face] * 3] * 3)
+            self.assertEqual(get_face_grid(Cube3BLD(), face, 'colour'), [[colour] * 3] * 3)
+
+    def test_colours_after_r(self):
+        """After R: U right column red, F right column blue, B left column green."""
+        cube = Cube3BLD()
+        cube.apply_move('R')
+        column = lambda face, c: [row[c] for row in get_face_grid(cube, face, 'colour')]
+        self.assertEqual(column('U', 2), ['R'] * 3)
+        self.assertEqual(column('F', 2), ['B'] * 3)
+        self.assertEqual(column('D', 2), ['O'] * 3)
+        self.assertEqual(column('B', 0), ['G'] * 3)
+        self.assertEqual(column('U', 0), ['G'] * 3)
+
+    def test_every_scrambled_face_has_nine_stickers_of_each_colour(self):
+        cube = Cube3BLD()
+        cube.scramble_wca(TUTORIAL_CASES[0][0])
+        counts = {}
+        for face in 'UDFBLR':
+            for row in get_face_grid(cube, face, 'colour'):
+                for c in row:
+                    counts[c] = counts.get(c, 0) + 1
+        self.assertEqual(counts, {c: 9 for c in 'GRWOYB'})
+
+    def test_render_net_and_invalid_mode(self):
+        lines = render_net(Cube3BLD()).splitlines()
+        self.assertEqual(len(lines), 11)
+        self.assertEqual(lines[0].strip(), "D E G")
+        with self.assertRaises(ValueError):
+            get_face_grid(Cube3BLD(), 'U', 'rainbow')
 
 
 if __name__ == '__main__':

@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Steps 1-6 done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py). Next: Step 7 (2D net visualizer).
+Current stage: Steps 1-7 done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py). Next: Step 8 (CLI trainer).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -171,12 +171,12 @@ Implement blindfolded cycle tracing logic for edges and corners using JB rules.
 
 
 
-7. **Build 2D Net Visualizer:** Display tool for users (no longer the main debugging tool; Step 3 covers correctness).
+7. **Build 2D Net Visualizer:** Display tool for users (no longer the main debugging tool; Step 3 covers correctness). [DONE - visual.py]
 Convert internal piece orientation states into face sticker colors/letters and render a 2D unfolded cube net.
 
 * **Implementation:**
 * Implement `get_face_grid(face)` to query edge/corner sticker values for all 6 faces (`U`, `L`, `F`, `R`, `B`, `D`).
-* Build `print_cube_state(mode)` supporting both face-letter mode (`U`, `F`, `R`...) and JB-letter mode (`E`, `G`, `J`...).
+* Build `print_cube_state(mode)` supporting face-letter mode (`U`, `F`, `R`...), JB-letter mode (`E`, `G`, `J`...) and colour mode (`G`, `R`, `W`...) for comparing with a physical cube.
 
 
 * **Verification Check:**
