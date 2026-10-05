@@ -203,3 +203,90 @@ Create the interactive command-line app loop for end-user practice.
 
 * **Verification Check:**
 * Run 5 complete training sessions. Confirm smooth execution, accurate score reporting, and clean handling of empty or formatted inputs (e.g., space-separated letter pairs).
+
+
+
+
+Phase 2: Website Tool
+Goal: turn the trainer into a static website with a BLD timer, saved history and statistics.
+
+Decisions:
+* Architecture: Option A. Port the engine, checker, tracer and visualizer to JavaScript and host as a static site (GitHub Pages). No server; works offline. The Python code stays the reference implementation.
+* Timer: memo split. Memo time and execution (solve) time are recorded separately; total = memo + execution.
+* Statistics: success rate, best overall, mo3, ao12.
+* Storage: every attempt saves its scramble number, scramble moves, user memo input, reference memo and times.
+
+9. **Port Engine to JavaScript & Shared Test Vectors:** Keeps both versions identical.
+Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript modules in `web/`.
+
+* **Implementation:**
+* Plain JavaScript ES modules, no build step (proposal; switch to TypeScript if wanted).
+* Add `export_vectors.py`: Python generates `web/test_vectors.json` with a few hundred seeded scrambles and, for each, every sticker letter, the traced memo, and checker results for correct and wrong memos (tutorial cases included).
+
+
+* **Verification Check:**
+* JS tests (`node --test`) reproduce every value in `test_vectors.json` exactly.
+* Rerun `export_vectors.py` after any Python change; the JS tests must still pass.
+
+
+
+
+10. **Build Web UI:** Same features as the CLI trainer, in the browser.
+
+* **Implementation:**
+* Scramble display (WCA hold) with new-scramble and enter-your-own options.
+* Edge and corner memo inputs (case, brackets and spaces ignored, as in the CLI).
+* Result panel: success/fail, unsolved pieces, reference memo, parity flag.
+* Coloured SVG cube net (green top / red front), toggle to letter mode.
+
+
+* **Verification Check:**
+* Tutorial cases 1-5 give the same results as the CLI.
+* Usable at phone width.
+
+
+
+
+11. **Timer with Memo Split:** BLD timing.
+
+* **Implementation:**
+* Space bar (desktop) or tap (phone): first press starts memo time, second press (blindfold on) ends memo and starts execution, third press stops.
+* After stopping: player enters the memo they used and marks the attempt solved or DNF.
+* The memo is checked automatically and its result stored alongside the attempt.
+
+
+* **Verification Check:**
+* Split times add up to the total; timing is accurate to 0.01 s (use performance.now()).
+* Cancelling (Esc) mid-attempt saves nothing.
+
+
+
+
+12. **Results, Storage & Statistics:** Session history and stats.
+
+* **Implementation:**
+* Each attempt record: scramble number, scramble moves, user memo input (edges, corners), reference memo (edges, corners), memo time, execution time, total time, solved/DNF, memo correct (true/false), date.
+* Saved in the browser (localStorage), with export to CSV/JSON and import back.
+* Statistics:
+* Success rate = solved attempts / all attempts.
+* Best overall = fastest solved total time.
+* mo3 = mean of the last 3 attempts; any DNF makes it DNF.
+* ao12 = last 12 attempts, drop the best and worst, mean of the remaining 10; one DNF counts as the worst, two or more make it DNF.
+* Show current and best mo3 / ao12.
+
+
+* **Verification Check:**
+* Unit tests for every stat, including DNF cases and fewer than 3 / 12 attempts (shown as "-").
+* Records survive a page reload; export then import gives identical history.
+
+
+
+
+13. **Deploy:** Publish the site.
+
+* **Implementation:**
+* GitHub Pages from the `web/` folder of this repo.
+
+
+* **Verification Check:**
+* Site loads and works on desktop and phone browsers, including offline after the first visit.
