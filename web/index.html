@@ -30,6 +30,13 @@
         <p id="own-error" class="error" role="alert"></p>
       </form>
 
+      <h2>Timer</h2>
+      <div id="timer" class="timer" role="button" tabindex="0" aria-describedby="timer-status">
+        <div id="timer-total" class="timer-total">0.00</div>
+        <div class="timer-split">memo <span id="timer-memo">0.00</span> · execution <span id="timer-exec">0.00</span></div>
+      </div>
+      <p id="timer-status" class="hint" aria-live="polite"></p>
+
       <h2>Your memo</h2>
       <form id="memo-form" class="memo-form">
         <label for="edge-memo">Edges</label>
@@ -37,14 +44,19 @@
         <label for="corner-memo">Corners</label>
         <input id="corner-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. YG MJ QS">
         <p class="hint">Case, brackets and spaces are ignored.</p>
-        <div class="row">
-          <button type="submit" class="primary">Check</button>
+        <div id="check-row" class="row">
+          <button id="check" type="submit" class="primary">Check</button>
           <button id="reveal" type="button">Show answer</button>
+        </div>
+        <div id="save-row" class="row" hidden>
+          <span class="save-label">Save attempt as:</span>
+          <button id="save-solved" type="button" class="primary">Solved</button>
+          <button id="save-dnf" type="button" class="danger">DNF</button>
         </div>
       </form>
 
       <div id="result" class="result" aria-live="polite" hidden></div>
-      <p class="score">Session score: <span id="score">0/0</span></p>
+      <p class="score">Session score (timed attempts, memo correct): <span id="score">0/0</span></p>
     </section>
 
     <section class="panel" aria-labelledby="cube-heading">

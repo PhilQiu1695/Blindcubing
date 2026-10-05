@@ -8,7 +8,7 @@ starting a new workflow step.
 ## Files
 - `web/js/`: JavaScript port (`cube.js`, `memo.js`, `visual.js`, `scramble.js`); `web/tests/`: Node tests
 - `web/index.html`, `web/css/style.css`, `web/js/app.js` (UI wiring), `render.js` (sticker data + SVG net, DOM-free and
-  tested), `cube3d.js` (CSS 3D cube)
+  tested), `cube3d.js` (CSS 3D cube), `timer.js` (memo-split timer + attempt records, DOM-free and tested)
 - `export_vectors.py`: writes `web/test_vectors.json` from the Python code
 - `memo.py`: memo parser and checker (`parse_memo`, `execute_memo`, `check_memo`) and cycle tracer (`trace_memo`)
 - `trainer.py`: CLI trainer (`generate_scramble`, `Trainer`); I/O is injectable for tests
@@ -43,8 +43,8 @@ starting a new workflow step.
   checker and tracer (`memo.py`), net (`visual.py`), CLI trainer (`trainer.py`).
 - Memo rules are in "What is a valid memo?" in the design doc. `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
-- Phase 2 (website, steps 9-13): steps 9-10 done. The JS port in `web/js/` is kept
-  identical to Python via `web/test_vectors.json`. Next: step 11, timer.
+- Phase 2 (website, steps 9-13): steps 9-11 done. The JS port in `web/js/` is kept
+  identical to Python via `web/test_vectors.json`. Next: step 12, storage and stats.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules

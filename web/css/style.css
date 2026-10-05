@@ -143,6 +143,28 @@ label { display: block; font-weight: 600; font-size: 0.9rem; margin: 10px 0 4px;
 }
 .score { color: var(--muted); margin: 14px 0 0; }
 
+button.danger { background: var(--bad); color: var(--panel); border-color: var(--bad); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.save-label { font-weight: 600; }
+
+.timer {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+.timer:hover { border-color: var(--accent); }
+.timer-total { font: 700 3rem/1.1 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+.timer-split { color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.timer.phase-memo { border-color: var(--accent); }
+.timer.phase-memo .timer-total { color: var(--accent); }
+.timer.phase-exec { border-color: var(--ok); }
+.timer.phase-exec .timer-total { color: var(--ok); }
+.timer.phase-done { border-color: var(--text); }
+
 .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .segmented button { border: 0; border-radius: 0; padding: 6px 12px; font-size: 0.875rem; }
