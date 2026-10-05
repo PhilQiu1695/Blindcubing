@@ -377,3 +377,8 @@ if (initial.stickers) document.querySelector(`[data-stickers="${initial.stickers
 if (initial.state) document.querySelector(`[data-state="${initial.state}"]`).click();
 
 renderStats();
+
+// Offline support (needs https or localhost)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* site still works online */ });
+}

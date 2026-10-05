@@ -24,6 +24,8 @@ starting a new workflow step.
 - Run tests: `python3 tests.py`
 - JS tests: `cd web && node --test` (Node 24, no dependencies)
 - Regenerate shared test vectors: `python3 export_vectors.py`
+- Deploy: pushing to main runs `.github/workflows/pages.yml` (tests, then GitHub Pages).
+  Site: https://philqiu1695.github.io/Blindcubing/
 - Run the website locally: `cd web && python3 -m http.server 8000`, then open http://localhost:8000
   (ES modules don't load from file://) (Python 3.11, standard library only, no dependencies)
 
@@ -44,8 +46,8 @@ starting a new workflow step.
   checker and tracer (`memo.py`), net (`visual.py`), CLI trainer (`trainer.py`).
 - Memo rules are in "What is a valid memo?" in the design doc. `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
-- Phase 2 (website, steps 9-13): steps 9-12 done. The JS port in `web/js/` is kept
-  identical to Python via `web/test_vectors.json`. Next: step 13, deploy.
+- Phase 2 (website, steps 9-13): steps 9-13 built. The JS port in `web/js/` is kept
+  identical to Python via `web/test_vectors.json`. Every push to main deploys the site.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules
@@ -55,6 +57,7 @@ starting a new workflow step.
   from the code's own output.
 - Python is the reference. After changing `cube_state.py`, `memo.py` or `visual.py`,
   mirror the change in `web/js/`, run `python3 export_vectors.py`, then both test suites.
+- New file in `web/js/`: add it to `FILES` in `web/sw.js` (a test enforces this), or it breaks offline use.
 - Keep `cube_state.py` free of I/O. Put the CLI, visualizer and trainer loop in
   separate modules.
 - New behavior gets a test in `tests.py`, in the class for its workflow step.
