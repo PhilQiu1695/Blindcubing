@@ -31,16 +31,12 @@ starting a new workflow step.
   (clockwise). Otherwise a cyclic `ori` offset can't describe every state.
 
 ## Status (as of 2026-10-05)
-- Workflow steps 1-3 are done: data structures, move engine and parser, and the
-  sticker-model cross-check (`TestCube3BLDReference`).
-- Step 4 (memo spec) is decided; see "What is a valid memo?" and workflow step 4
-  in the design doc. Step 5 (memo checker) is done in `memo.py`: `check_memo()`
+- Phase 1 (steps 1-8) is complete: engine, reference cross-check, memo spec,
+  checker and tracer (`memo.py`), net (`visual.py`), CLI trainer (`trainer.py`).
+- Memo rules are in "What is a valid memo?" in the design doc. `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
-  Step 6 (cycle tracer) is done: `trace_memo()` in `memo.py`. Step 7 (net visualizer)
-  is done in `visual.py`. Step 8 (CLI trainer) is
-  built in `trainer.py`; the manual 5-session check is pending.
-- Phase 2 (website, steps 9-13 in the design doc) is planned: JavaScript port
-  in `web/`, kept identical to Python via `web/test_vectors.json`.
+- Next: Phase 2 (website, steps 9-13), starting with step 9: JavaScript port in
+  `web/`, kept identical to Python via `web/test_vectors.json`.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules

@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Steps 1-8 built (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Next: Step 8's manual check (5 real training sessions), then Additional functions.
+Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Next: Phase 2, step 9 (JavaScript port).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -186,7 +186,7 @@ Convert internal piece orientation states into face sticker colors/letters and r
 
 
 
-8. **Build CLI Trainer Interface:** Final integration step. [BUILT - trainer.py, run with python3 trainer.py; manual 5-session check pending]
+8. **Build CLI Trainer Interface:** Final integration step. [DONE - trainer.py, run with python3 trainer.py; checked in real sessions: correct, wrong and messy memos, /skip]
 Create the interactive command-line app loop for end-user practice.
 
 * **Implementation:**
