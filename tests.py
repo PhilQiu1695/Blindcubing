@@ -325,6 +325,8 @@ class TestTutorialCases(unittest.TestCase):
         c1.scramble_wca("U F' R2 D B L")
         c2.scramble("R U' F2 L D B")
         self.assertEqual((c1.edges, c1.corners), (c2.edges, c2.corners))
+        with self.assertRaisesRegex(ValueError, "'Rw'"):  # error names the move as typed
+            Cube3BLD().scramble_wca("R Rw")
 
 
 

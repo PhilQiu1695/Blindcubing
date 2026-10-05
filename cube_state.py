@@ -212,4 +212,6 @@ class Cube3BLD:
     def scramble_wca(self, scramble_str: str):
         """Execute a scramble written for the WCA hold, translated to the blindfold hold."""
         for move in scramble_str.strip().split():
-            self.apply_move(self.WCA_TO_HOLD.get(move[0], move[0]) + move[1:])
+            if not self.MOVE_PATTERN.match(move):
+                raise ValueError(f"Unsupported move: '{move}'")  # report the move as typed
+            self.apply_move(self.WCA_TO_HOLD[move[0]] + move[1:])

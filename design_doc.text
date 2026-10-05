@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 step 9 (JavaScript port in web/js, shared test vectors) done. Next: step 10 (web UI).
+Current stage: Phase 1 (steps 1-8) done (data structures, move engine + parser, reference cross-check, memo spec, memo checker and cycle tracer in memo.py, net visualizer in visual.py, CLI trainer in trainer.py). Phase 2 steps 9-10 done (JavaScript port with shared test vectors; web UI in web/index.html). Next: step 11 (timer).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -231,7 +231,7 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 
 
 
-10. **Build Web UI:** Same features as the CLI trainer, in the browser.
+10. **Build Web UI:** Same features as the CLI trainer, in the browser. [DONE - web/index.html, js/app.js, js/render.js, js/cube3d.js; stretch goal (move animations) not built; checked on desktop by the user, real-phone check deferred]
 
 * **Implementation:**
 * Scramble display (WCA hold) with new-scramble and enter-your-own options.
@@ -243,6 +243,8 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 * Drag (mouse) or swipe (phone) to rotate freely; a reset button returns to the default view (U, F, R visible). Optional slow auto-rotate when idle.
 * Two display modes: scramble colours, and mapping scheme (JB letter on every sticker, buffer stickers marked). Letter mode on a solved cube is a 3D study aid for the letter scheme.
 * Optional (stretch): step through the scramble move by move with turn animations.
+* URL options for sharing and testing: ?scramble=...&view=3d|net&stickers=colours|letters&state=scramble|solved.
+* Scoring as in the CLI: only the first check of each scramble counts; "Show answer" makes it unscored.
 * Tech proposal: CSS 3D transforms (6 faces of 3x3 stickers, no library) for the static state. Move animations need per-piece rendering, so the stretch goal would use Three.js (loaded from a CDN).
 
 

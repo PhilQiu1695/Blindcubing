@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3BLD Memo Trainer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>3BLD Memo Trainer</h1>
+    <p class="subtitle">JB letter scheme · edge buffer UF · corner buffer UFL</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-labelledby="scramble-heading">
+      <h2 id="scramble-heading">Scramble</h2>
+      <p class="hint">Scramble with <strong>white top, green front</strong>, then memo holding <strong>green top, red front</strong>.</p>
+      <p id="scramble-text" class="scramble" aria-live="polite"></p>
+      <div class="row">
+        <button id="new-scramble" type="button" class="primary">New scramble</button>
+        <button id="toggle-own" type="button" aria-expanded="false" aria-controls="own-form">Enter my own</button>
+      </div>
+      <form id="own-form" class="own-form" hidden>
+        <label for="own-scramble">Scramble (WCA hold)</label>
+        <div class="row">
+          <input id="own-scramble" type="text" autocomplete="off" spellcheck="false" placeholder="R U R' U' …">
+          <button type="submit">Use</button>
+        </div>
+        <p id="own-error" class="error" role="alert"></p>
+      </form>
+
+      <h2>Your memo</h2>
+      <form id="memo-form" class="memo-form">
+        <label for="edge-memo">Edges</label>
+        <input id="edge-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. HE PK JZ CM RW">
+        <label for="corner-memo">Corners</label>
+        <input id="corner-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. YG MJ QS">
+        <p class="hint">Case, brackets and spaces are ignored.</p>
+        <div class="row">
+          <button type="submit" class="primary">Check</button>
+          <button id="reveal" type="button">Show answer</button>
+        </div>
+      </form>
+
+      <div id="result" class="result" aria-live="polite" hidden></div>
+      <p class="score">Session score: <span id="score">0/0</span></p>
+    </section>
+
+    <section class="panel" aria-labelledby="cube-heading">
+      <h2 id="cube-heading">Cube</h2>
+      <div class="controls">
+        <div class="segmented" role="group" aria-label="View">
+          <button type="button" data-view="3d" aria-pressed="true">3D</button>
+          <button type="button" data-view="net" aria-pressed="false">Net</button>
+        </div>
+        <div class="segmented" role="group" aria-label="Stickers">
+          <button type="button" data-stickers="colours" aria-pressed="true">Colours</button>
+          <button type="button" data-stickers="letters" aria-pressed="false">Letters</button>
+        </div>
+        <div class="segmented" role="group" aria-label="State">
+          <button type="button" data-state="scramble" aria-pressed="true">Scramble</button>
+          <button type="button" data-state="solved" aria-pressed="false">Solved (scheme)</button>
+        </div>
+      </div>
+      <div id="view-3d" class="view-3d">
+        <div id="cube3d-container" class="cube3d-container"></div>
+        <button id="reset-view" type="button" class="small">Reset view</button>
+        <p class="hint">Drag or swipe to rotate.</p>
+      </div>
+      <div id="view-net" class="view-net" hidden></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -175,7 +175,9 @@ export class Cube {
   /** Execute a scramble written for the WCA hold, translated to the blindfold hold. */
   scrambleWca(scrambleStr) {
     for (const move of splitMoves(scrambleStr)) {
-      this.applyMove((Cube.WCA_TO_HOLD[move[0]] ?? move[0]) + move.slice(1));
+      // report the move as typed, not its translation
+      if (!Cube.MOVE_PATTERN.test(move)) throw new Error(`Unsupported move: '${move}'`);
+      this.applyMove(Cube.WCA_TO_HOLD[move[0]] + move.slice(1));
     }
   }
 }
