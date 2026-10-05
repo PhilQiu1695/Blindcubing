@@ -1,0 +1,197 @@
+###bldcube_trainer DESIGN DOC###
+based on tutorial:【【JB法】三阶盲拧入门教程——用一条公式实现盲拧魔方！】 https://www.bilibili.com/video/BV1jm9eBoEgA/?p=3&share_source=copy_web&vd_source=4166afeefe76bcc9bc8038e155590d27
+
+
+Functions:
+1: Generate random scramble(standard WCA scramble position different from the blindfold hold position needs a translation,  i.e. green front white top), 
+then asks for player input memo to check correctness.
+2: Takes player input scramble, checks player memo correctness/returns one valid memo
+
+Problems/modules
+1. mapping letters to stickers
+2. tracking rotation on cube states
+3. outputting/visualizing cube state
+4. memo correctness check, any valid memo will do(most important)
+
+What is a valid memo?
+1. Start at buffer position,
+2. Note the sticker in this position and record sticker letter 
+#position letter: what the letter on the face would be for a solved cube. 
+#sticker letter: the actual letter on the face in the scramble)
+3. Go to the position the letter is supposed to be
+4. Repeat steps 2-3 until hit buffer sticker
+5. For pieces in right place but wrong orientation, put all the letters at the end of its respective memo as a group
+#Example corner memo: Corners MP RK dZ e GHI (lowercase d and e mark cycle, two letters a group, GHI at the end marks the wrongly oriented piece)
+6. If no unrecorded edges: FINISH
+7. For unrecorded: exist small cycles
+8. start at arbitrary unrecorded edge, record the position letter(with some for of notation to clarify, eg lowercase), not the sticker letter.
+9. steps 2, 3 repeat until hit the letter recorded in step 7 (or the other letter on that edge)
+
+A standard edge memo should have 11 letters(corner 7), add one for each small cycle, and subtract one for each piece in its right position
+When starting to record cycles for corners, have the first position letter be the one on the top/bottom face of the cube i.e. blue/green
+
+Parity check: to be implemented
+
+Results: 2 strings for edge + corner
+
+Testing features:
+1. outputting cube state for custom scramble(eg: R U)to check scramble/tracking correctness
+
+
+Additional functions:
+1. Turn into website and visualize scramble. 
+2. More aesthetics
+3. To github
+
+Letter Mapping scheme:
+  Face   Colour    Line 1	   Line 2	     Line 3
+U Top	   Green	   D E G	   C Cent G	   Buf Buf J
+F Front	 Red	     Buf Buf L S Cent Q	   N J Y
+R Right	 White	   K H I	   R Cent Z	   Z P S
+B Back	 Orange	   H F F	   Y Cent W	   T N P
+L Left	 Yellow	   E D Buf	 X Cent T	   Q L M
+D Bottom Blue	     W A X	   K Cent B	   O M R
+
+For example, the white-orange edge should be white-Z, orange-Y
+
+
+
+
+
+Workflow:
+Current stage: Steps 1-3 done (data structures, move engine + parser, reference cross-check). Next: Step 4 (memo spec decisions).
+
+1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
+Build the foundational cube state class and static lookup dictionaries for the JB method.
+
+* **Implementation:**
+* Create `Cube3BLD` initialized with 12 edge slots `[(0, 0) ... (11, 0)]` and 8 corner slots `[(0, 0) ... (7, 0)]`. Each slot holds `(piece_id, ori)`; piece_id is the piece's home slot.
+* Set up static dictionaries mapping every slot index and face orientation to its corresponding JB letter (e.g., `Edge Slot 6` on `R` face $\rightarrow$ `'Z'`, `B` face $\rightarrow$ `'Y'`).
+* Define constants for the buffers: Edge Buffer = `UF` (Slot 2), Corner Buffer = `UFL` (Slot 3). Buffer stickers get placeholder labels (`#U`, `#F`, `#L`) so any sticker can be read, even when the buffer piece has moved.
+* Orientation convention: the sticker on a slot's face i is the piece's sticker (i + ori) mod n, using the slot face orders.
+* Corner slot face orders all start with the U/D face and go clockwise around the corner (e.g. UFR = (U,F,R), UFL = (U,L,F)). Mixing handedness makes some states impossible to represent.
+
+
+* **Verification Check:**
+* Write a unit test that iterates through all 22 non-buffer edge stickers and 21 non-buffer corner stickers on a solved cube state.
+* Verify that every slot returns its exact letter as defined in your design doc lookup table.
+
+
+
+
+2. **Implement Move Engine & Scramble Parser:** Ensures state tracking accuracy. [DONE]
+Implement quarter-turn metric move mechanics and string scramble application.
+
+* **Implementation:**
+* Build `apply_move(move_str)` supporting standard outer-layer moves (`U`, `D`, `L`, `R`, `F`, `B` and modifiers `'`, `2`). Parse strictly: reject `R2'`, `r`, `Rw`, etc.
+* Each base move is a clockwise quarter turn (as seen looking at that face). Edges flip according to the per-move table; corners update as `ori = (ori + twist) mod 3`, with twist 0 for U/D and alternating 1, 2 around the cycle for R/L/F/B.
+* Add `scramble(scramble_str)` to execute a space-separated sequence of moves.
+
+
+* **Verification Check:**
+* Apply 6 repetitions of `R U R' U'` (sexy move) and assert that `cube.edges` and `cube.corners` return to their exact starting solved tuples `(slot, 0)`.
+* Apply `R` once and check that corners 1, 2, 5, 6 update their slot positions and orientation offsets accurately.
+* Check sticker letters against a physical cube after single turns (e.g. after `R`, UFR's U face shows `Y`). "N turns = solved" tests alone can't catch a wrong turn direction or twist convention.
+
+
+
+
+3. **Cross-check Against an Independent Sticker Model:** Proves the move engine is correct. [DONE]
+A move engine can pass every self-consistency test and still be wrong (this happened: U/D were reversed and corner twists were wrong).
+
+* **Implementation:**
+* In `tests.py`, build a separate 3D sticker simulator: each sticker is a (position, normal) vector, and a face turn rotates every sticker in that layer by 90 degrees.
+
+
+* **Verification Check:**
+* Every face turn and modifier, plus 500 seeded random scrambles, give identical sticker letters in both models.
+
+
+
+
+4. **Decide the Memo Spec:** Steps 5-8 all depend on these rules. [OPEN - decisions needed]
+Write down exactly what a valid memo string looks like before building the checker.
+
+* **Decisions:**
+* Input format: allowed separators (spaces, letter pairs), case meaning (lowercase = cycle break).
+* Twisted corners / flipped edges in place: written as letter-pair small cycles (e.g. `gH`), or a separate group at the end. The notation must say which way the piece is twisted.
+* Closing letter of a small cycle: always recorded (it may be a different sticker of the start piece).
+* Buffer piece already in the buffer slot (solved, flipped or twisted): break into a new cycle straight away.
+* Parity: what the parity algorithm physically swaps, and how it changes the memo. Edge and corner parity are always equal.
+* Scramble orientation: scramble in the WCA hold (white top, green front) and memo in green top / red front. Translate moves U->R, F->U, R->F, D->L, B->D, L->B.
+
+
+* **Verification Check:**
+* Hand-write the memo for 3-5 scrambles, including one with parity and one with a twisted corner, using only the written rules.
+
+
+
+
+5. **Implement Memo Executor & Checker:** Enables flexible user checking. Built before the tracer so it can verify the tracer.
+Validate user-submitted memo strings by simulating them on the scrambled cube.
+
+* **Implementation:**
+* **Executor (main check):** Each letter means "swap the buffer sticker with this target sticker". Apply the user's memo letters as swaps on a copy of the scrambled cube, apply the parity rule, and check that the cube is solved. This accepts any valid memo.
+* **Reference memo (display only):** Show the tracer's memo (Step 6) next to the user's. Don't use it for pass/fail.
+* Parity flag detection: an odd number of edge targets means parity. The corner count must also be odd, otherwise the memo is wrong.
+
+
+* **Verification Check:**
+* Input an alternate valid cycle break for a scramble with floating cycles (e.g., breaking to piece `A` vs piece `C`) and confirm the simulator accepts both as valid solutions.
+* Input intentionally flawed memos (e.g., missed flipped edge or twisted corner) and ensure the engine marks them incorrect.
+
+
+
+
+6. **Develop Cycle Tracing Engine:** Core algorithmic challenge.
+Implement blindfolded cycle tracing logic for edges and corners using JB rules.
+
+* **Implementation:**
+* **Main Loop:** Read the piece in the buffer slot. If it is not the buffer piece, append target letter to memo and jump to that target's slot.
+* **Cycle Breaks:** When returning to the buffer while unsolved pieces remain, pick the first unrecorded piece in canonical order as a new cycle break.
+* **Rule Enforcement:** For corners, always break cycles using the top/bottom (`U`/`D` face) sticker first.
+* **In-place Flips/Twists:** Handle them with the notation decided in Step 4.
+
+
+* **Verification Check:**
+* Property test: for 1000+ random scrambles, feeding the tracer's memo to the Step 5 executor solves the cube.
+* Test against known simple scrambles:
+* Single swap target (e.g., `R2` or `U2`).
+* Known benchmark scrambles from the Bilibili tutorial.
+* Verify generated edge memo string length and corner memo string length match hand-traced expectations.
+
+
+
+
+7. **Build 2D Net Visualizer:** Display tool for users (no longer the main debugging tool; Step 3 covers correctness).
+Convert internal piece orientation states into face sticker colors/letters and render a 2D unfolded cube net.
+
+* **Implementation:**
+* Implement `get_face_grid(face)` to query edge/corner sticker values for all 6 faces (`U`, `L`, `F`, `R`, `B`, `D`).
+* Build `print_cube_state(mode)` supporting both face-letter mode (`U`, `F`, `R`...) and JB-letter mode (`E`, `G`, `J`...).
+
+
+* **Verification Check:**
+* Apply a short test scramble (e.g., `R U`).
+* Print the 2D net and compare it against a physical cube or 3D visualizer in **Green Top / Red Front** orientation to confirm sticker placement match.
+
+
+
+
+8. **Build CLI Trainer Interface:** Final integration step.
+Create the interactive command-line app loop for end-user practice.
+
+* **Implementation:**
+* Implement a random-move scramble generator (20-25 moves). Block a repeated face (`R R`) and same-axis triples (`R L R`). (WCA scrambles are random-state; random-move is fine for training.)
+* Show scrambles in the WCA hold and translate them to the memo hold before applying (Step 4).
+* Create the user loop:
+1. Display scramble string.
+2. Prompt for Edge Memo input.
+3. Prompt for Corner Memo input.
+4. Run validation engine and output results (Success / Fail + Correct Reference Memo + Optional 2D net diagram).
+
+
+
+
+* **Verification Check:**
+* Run 5 complete training sessions. Confirm smooth execution, accurate score reporting, and clean handling of empty or formatted inputs (e.g., space-separated letter pairs).
