@@ -14,8 +14,13 @@ test('service worker caches every site file, so the site works offline', () => {
 
 test('page uses relative paths (the site is served from /Blindcubing/ on GitHub Pages)', () => {
   const html = read('index.html');
-  for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+  // Scripts, stylesheets and icons must be relative; ordinary <a> links may point elsewhere
+  for (const [, url] of html.matchAll(/(?:<script[^>]*src|<link[^>]*href)="([^"]+)"/g)) {
     if (url.startsWith('data:')) continue;
     assert.ok(!url.startsWith('/') && !/^https?:/.test(url), `${url} should be a relative path`);
   }
+});
+
+test('tutorial credit links to the Bilibili tutorial', () => {
+  assert.match(read('index.html'), /href="https:\/\/www\.bilibili\.com\/video\/BV1jm9eBoEgA\/\?p=3"/);
 });
