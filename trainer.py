@@ -13,14 +13,14 @@ HELP = """Commands at any prompt: /net shows the cube net, /skip reveals the ans
 (not scored), /quit ends the session. Case, brackets and spaces in memos are ignored."""
 
 
-def generate_scramble(rng=None, min_len: int = 20, max_len: int = 25) -> str:
+def generate_scramble(rng=None, length: int = 18) -> str:
     """
-    Random-move scramble in the WCA hold. No face is turned twice in a row,
+    Random-move scramble of `length` moves in the WCA hold. No face is turned twice in a row,
     and no three moves in a row share an axis (e.g. R L R).
     """
     rng = rng or random.Random()
     moves = []
-    for _ in range(rng.randint(min_len, max_len)):
+    for _ in range(length):
         while True:
             face = rng.choice(FACES)
             if moves and face == moves[-1][0]:
@@ -77,12 +77,16 @@ class Trainer:
             except ValueError as err:
                 self.output(f"  {err}. Try again.")
 
-    def practise(self, scramble: str):
+    def practise(self, scramble: str, show_net: bool = False):
         """One attempt: show the scramble, take both memos, check and report."""
         cube = Cube3BLD()
         cube.scramble_wca(scramble)
         self.output("")
         self.output(f"Scramble (white top, green front): {scramble}")
+        if show_net:
+            self.output("Check your scramble (held green top, red front;"
+                        " G=green R=red W=white O=orange Y=yellow B=blue):")
+            self.output(render_net(cube, 'colour'))
         self.output("Memo holding green top, red front.")
 
         edges = self.ask_memo("Edge", 'edge', cube)
@@ -119,7 +123,7 @@ class Trainer:
                 if choice in ('q', '/quit'):
                     break
                 if choice == '1':
-                    self.practise(generate_scramble(self.rng))
+                    self.practise(generate_scramble(self.rng), show_net=True)
                 elif choice == '2':
                     scramble = self.ask("Scramble (WCA hold): ")
                     try:

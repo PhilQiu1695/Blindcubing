@@ -190,7 +190,7 @@ Convert internal piece orientation states into face sticker colors/letters and r
 Create the interactive command-line app loop for end-user practice.
 
 * **Implementation:**
-* Implement a random-move scramble generator (20-25 moves). Block a repeated face (`R R`) and same-axis triples (`R L R`). (WCA scrambles are random-state; random-move is fine for training.)
+* Implement a random-move scramble generator (18 moves). Block a repeated face (`R R`) and same-axis triples (`R L R`). (WCA scrambles are random-state; random-move is fine for training.)
 * Show scrambles in the WCA hold and translate them to the memo hold before applying (Step 4).
 * Create the user loop:
 1. Display scramble string.
@@ -238,11 +238,20 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 * Edge and corner memo inputs (case, brackets and spaces ignored, as in the CLI).
 * Result panel: success/fail, unsolved pieces, reference memo, parity flag.
 * Coloured SVG cube net (green top / red front), toggle to letter mode.
+* Rotating 3D cube:
+* Shows the scrambled state in the memo hold (green top / red front), drawn from the same sticker data as the net.
+* Drag (mouse) or swipe (phone) to rotate freely; a reset button returns to the default view (U, F, R visible). Optional slow auto-rotate when idle.
+* Two display modes: scramble colours, and mapping scheme (JB letter on every sticker, buffer stickers marked). Letter mode on a solved cube is a 3D study aid for the letter scheme.
+* Optional (stretch): step through the scramble move by move with turn animations.
+* Tech proposal: CSS 3D transforms (6 faces of 3x3 stickers, no library) for the static state. Move animations need per-piece rendering, so the stretch goal would use Three.js (loaded from a CDN).
 
 
 * **Verification Check:**
 * Tutorial cases 1-5 give the same results as the CLI.
 * Usable at phone width.
+* 3D cube stickers match the net for every face (same data source), checked on the tutorial cases and against a physical cube.
+* Mapping mode on a solved cube matches the letter scheme table.
+* Rotation is smooth on a phone.
 
 
 

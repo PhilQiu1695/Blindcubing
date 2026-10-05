@@ -573,7 +573,7 @@ class TestCube3BLDStep8(unittest.TestCase):
         rng = random.Random(8)
         for _ in range(500):
             moves = generate_scramble(rng).split()
-            self.assertTrue(20 <= len(moves) <= 25)
+            self.assertEqual(len(moves), 18)
             Cube3BLD().scramble(' '.join(moves))  # every token valid
             for a, b in zip(moves, moves[1:]):
                 self.assertNotEqual(a[0], b[0], moves)
@@ -586,6 +586,7 @@ class TestCube3BLDStep8(unittest.TestCase):
     def test_custom_scramble_correct_unformatted_memo(self):
         trainer, out = self.run_session(["2", TUTORIAL_CASES[2][0], "zbaetxmcrckl", "mqgjzers", "n", "q"])
         self.assertIn("Success!", out)
+        self.assertNotIn("Check your scramble", out)  # own scramble: no net up front
         self.assertEqual((trainer.correct, trainer.attempts), (1, 1))
         self.assertIn("Session over. Score: 1/1", out)
 
@@ -595,6 +596,7 @@ class TestCube3BLDStep8(unittest.TestCase):
             "1", "AB", "DE", "y",
             "q"])
         self.assertEqual((trainer.correct, trainer.attempts), (1, 2))
+        self.assertEqual(out.count("Check your scramble"), 2)  # colour net after each random scramble
         self.assertIn("Fail.", out)
         self.assertIn("Reference memo", out)
         self.assertIn("·", out)  # letter net printed after answering y
