@@ -3,6 +3,7 @@ import unittest
 from cube_state import Cube3BLD
 from memo import check_memo, parse_memo, trace_memo
 from visual import get_face_grid, render_net
+from trainer import AXIS, Trainer, generate_scramble
 
 class TestCube3BLDStep1(unittest.TestCase):
     def setUp(self):
@@ -538,6 +539,95 @@ class TestCube3BLDStep7(unittest.TestCase):
         self.assertEqual(lines[0].strip(), "D E G")
         with self.assertRaises(ValueError):
             get_face_grid(Cube3BLD(), 'U', 'rainbow')
+
+
+
+class TestCube3BLDStep8(unittest.TestCase):
+    """CLI trainer: scramble generator and scripted sessions."""
+
+    def run_session(self, inputs, rng=None):
+        answers = iter(inputs)
+        outputs = []
+
+        def fake_input(prompt):
+            outputs.append(prompt)
+            answer = next(answers)
+            # A callable answer computes the reply from what has been printed so far
+            return answer(outputs) if callable(answer) else answer
+
+        trainer = Trainer(input_fn=fake_input, output_fn=outputs.append, rng=rng or random.Random(1))
+        trainer.run()
+        return trainer, '\n'.join(outputs)
+
+    @staticmethod
+    def reference_answer(kind):
+        """Reply with the tracer's memo for the last scramble shown."""
+        def answer(outputs):
+            line = [o for o in outputs if o.startswith("Scramble (white top")][-1]
+            cube = Cube3BLD()
+            cube.scramble_wca(line.split(": ", 1)[1])
+            return trace_memo(cube)[0 if kind == 'edge' else 1]
+        return answer
+
+    def test_generator_rules(self):
+        rng = random.Random(8)
+        for _ in range(500):
+            moves = generate_scramble(rng).split()
+            self.assertTrue(20 <= len(moves) <= 25)
+            Cube3BLD().scramble(' '.join(moves))  # every token valid
+            for a, b in zip(moves, moves[1:]):
+                self.assertNotEqual(a[0], b[0], moves)
+            for a, b, c in zip(moves, moves[1:], moves[2:]):
+                self.assertFalse(AXIS[a[0]] == AXIS[b[0]] == AXIS[c[0]], moves)
+
+    def test_generator_seeded_is_reproducible(self):
+        self.assertEqual(generate_scramble(random.Random(3)), generate_scramble(random.Random(3)))
+
+    def test_custom_scramble_correct_unformatted_memo(self):
+        trainer, out = self.run_session(["2", TUTORIAL_CASES[2][0], "zbaetxmcrckl", "mqgjzers", "n", "q"])
+        self.assertIn("Success!", out)
+        self.assertEqual((trainer.correct, trainer.attempts), (1, 1))
+        self.assertIn("Session over. Score: 1/1", out)
+
+    def test_random_scramble_correct_and_wrong(self):
+        trainer, out = self.run_session([
+            "1", self.reference_answer('edge'), self.reference_answer('corner'), "n",
+            "1", "AB", "DE", "y",
+            "q"])
+        self.assertEqual((trainer.correct, trainer.attempts), (1, 2))
+        self.assertIn("Fail.", out)
+        self.assertIn("Reference memo", out)
+        self.assertIn("·", out)  # letter net printed after answering y
+        self.assertIn("Score: 1/2", out)
+
+    def test_invalid_letter_reprompts(self):
+        trainer, out = self.run_session(["2", TUTORIAL_CASES[0][0], "HE PK IZ CM RW",
+                                         "HE PK JZ CM RW", "YG MJ QS", "n", "q"])
+        self.assertIn("'I' is not an edge letter", out)
+        self.assertEqual((trainer.correct, trainer.attempts), (1, 1))
+
+    def test_parity_reported(self):
+        _, out = self.run_session(["2", TUTORIAL_CASES[1][0], TUTORIAL_CASES[1][1],
+                                   TUTORIAL_CASES[1][2], "n", "q"])
+        self.assertIn("Success! (parity)", out)
+
+    def test_skip_net_and_quit_commands(self):
+        trainer, out = self.run_session(["1", "/net", "/skip", "2", "R2 Rw", "1", "/quit"])
+        self.assertIn("Skipped (not scored).", out)
+        self.assertIn("Unsupported move", out)
+        self.assertEqual(trainer.attempts, 0)
+        self.assertIn("Session over. Score: 0/0", out)
+
+    def test_empty_memo_on_solved_scramble(self):
+        trainer, out = self.run_session(["2", "", "", "", "n", "q"])
+        self.assertEqual(trainer.correct, 1)
+
+    def test_end_of_input_exits_cleanly(self):
+        def eof(prompt):
+            raise EOFError
+        trainer = Trainer(input_fn=eof, output_fn=lambda *_: None)
+        trainer.run()
+        self.assertEqual(trainer.attempts, 0)
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ starting a new workflow step.
 
 ## Files
 - `memo.py`: memo parser and checker (`parse_memo`, `execute_memo`, `check_memo`) and cycle tracer (`trace_memo`)
+- `trainer.py`: CLI trainer (`generate_scramble`, `Trainer`); I/O is injectable for tests
 - `visual.py`: 2D net (`get_face_grid`, `render_net`, `print_cube_state`; modes letter/face/colour)
 - `cube_state.py`: the `Cube3BLD` class (state, letter maps, move engine, scramble parser)
 - `tests.py`: unittest suite, with one test class per workflow step, plus `StickerModel`, an independent reference simulator
@@ -14,6 +15,7 @@ starting a new workflow step.
 - `design_doc.text`: spec, memo rules, letter scheme, and the 8-step workflow
 
 ## Commands
+- Run trainer: `python3 trainer.py`
 - Run tests: `python3 tests.py` (Python 3.11, standard library only, no dependencies)
 
 ## Cube model
@@ -35,7 +37,8 @@ starting a new workflow step.
   in the design doc. Step 5 (memo checker) is done in `memo.py`: `check_memo()`
   ignores case/brackets/spaces and runs each letter as a buffer swap.
   Step 6 (cycle tracer) is done: `trace_memo()` in `memo.py`. Step 7 (net visualizer)
-  is done in `visual.py`. Next is step 8, the CLI trainer.
+  is done in `visual.py`. Step 8 (CLI trainer) is
+  built in `trainer.py`; the manual 5-session check is pending.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules

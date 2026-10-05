@@ -52,7 +52,8 @@ def parse_memo(text: str, kind: str) -> list:
             continue
         letter = ch.upper()
         if letter not in valid:
-            raise ValueError(f"'{ch}' is not a {kind} letter in the JB scheme")
+            article = 'an' if kind == 'edge' else 'a'
+            raise ValueError(f"'{ch}' is not {article} {kind} letter in the JB scheme")
         letters.append(letter)
     return letters
 
