@@ -35,7 +35,7 @@ When starting to record cycles for corners, have the first position letter be th
 
 Parity: no separate notation. It is implied by the letter count: an odd number of letters (brackets included) means parity. Edge and corner counts are always both odd or both even; a mismatch means the memo is wrong.
 
-Memo format: letters in pairs separated by single spaces (e.g. MP RK dZ e), with in-place blocks last in brackets. The checker decides right/wrong from the letters; formatting mistakes get a warning, not a fail.
+Memo format: letters in pairs separated by single spaces (e.g. MP RK dZ e), with in-place blocks last in brackets. This format is for the player only: the checker ignores case, brackets and spaces (e.g. mqgjzers is accepted for MQ GJ ZE (rs)).
 
 Results: 2 strings for edge + corner
 
@@ -64,7 +64,7 @@ For example, the white-orange edge should be white-Z, orange-Y
 
 
 Workflow:
-Current stage: Steps 1-3 done (data structures, move engine + parser, reference cross-check). Next: Step 4 (memo spec decisions).
+Current stage: Steps 1-5 done (data structures, move engine + parser, reference cross-check, memo spec, memo checker in memo.py). Next: Step 6 (cycle tracer).
 
 1. **Define Data Structures & Letter Scheme Mappings:** Prerequisite for all tracing logic. [DONE]
 Build the foundational cube state class and static lookup dictionaries for the JB method.
@@ -122,7 +122,7 @@ Write down exactly what a valid memo string looks like before building the check
 * Small cycles: the start and closing letters are always written in lowercase. They may be different stickers of the same piece (see "What is a valid memo?" step 9).
 * Buffer piece already in the buffer slot (solved, flipped or twisted): start a small cycle straight away.
 * Flipped edges / twisted corners in place: written as a 2-letter small cycle, in brackets, at the end of the section (e.g. clockwise UBR = (gh)).
-* Format: letter pairs separated by single spaces; bracket blocks last. Formatting mistakes are warnings, not fails.
+* Format: letter pairs separated by single spaces; bracket blocks last. The checker ignores case, brackets and spaces.
 * Parity: no notation; implied by an odd letter count. Edge and corner counts must have the same parity.
 * Scramble orientation: scramble in the WCA hold (white top, green front) and memo in green top / red front. Translate moves U->R, F->U, R->F, D->L, B->D, L->B.
 
@@ -133,7 +133,7 @@ Write down exactly what a valid memo string looks like before building the check
 
 
 
-5. **Implement Memo Executor & Checker:** Enables flexible user checking. Built before the tracer so it can verify the tracer.
+5. **Implement Memo Executor & Checker:** Enables flexible user checking. Built before the tracer so it can verify the tracer. [DONE - memo.py]
 Validate user-submitted memo strings by simulating them on the scrambled cube.
 
 * **Implementation:**

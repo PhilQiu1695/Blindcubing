@@ -1,6 +1,7 @@
 import random
 import unittest
 from cube_state import Cube3BLD
+from memo import check_memo, parse_memo
 
 class TestCube3BLDStep1(unittest.TestCase):
     def setUp(self):
@@ -322,6 +323,87 @@ class TestTutorialCases(unittest.TestCase):
         c1.scramble_wca("U F' R2 D B L")
         c2.scramble("R U' F2 L D B")
         self.assertEqual((c1.edges, c1.corners), (c2.edges, c2.corners))
+
+
+
+class TestCube3BLDStep5(unittest.TestCase):
+    """Memo checker: executing a valid memo as buffer swaps solves the cube."""
+
+    def scrambled(self, case_index):
+        cube = Cube3BLD()
+        cube.scramble_wca(TUTORIAL_CASES[case_index][0])
+        return cube
+
+    def test_tutorial_memos_accepted(self):
+        for n, (scramble, edges, corners) in enumerate(TUTORIAL_CASES, 1):
+            with self.subTest(case=n):
+                cube = Cube3BLD()
+                cube.scramble_wca(scramble)
+                result = check_memo(cube, edges, corners)
+                self.assertTrue(result.correct, result.messages)
+
+    def test_format_ignored(self):
+        """Case, brackets and spaces are only formatting."""
+        cube = self.scrambled(2)
+        for edges, corners in [("zbaetxmcrckl", "mqgjzers"),
+                               ("ZBAETXMCRCKL", "MQGJZERS"),
+                               ("Z B A E T X M C R C (K L)", "mq gj ze rs"),
+                               ("zb ae tx mc rc kl", "((MQ)) GJ ZE RS")]:
+            with self.subTest(edges=edges, corners=corners):
+                self.assertTrue(check_memo(cube, edges, corners).correct)
+
+    def test_alternate_small_cycle_start_accepted(self):
+        """Breaking into a different piece of the same cycle is still valid (case 4)."""
+        cube = self.scrambled(3)
+        self.assertTrue(check_memo(cube, "TN Fg YD Lg qB WA q", "MP RK dZ e (gh)").correct)
+
+    def test_wrong_memos_rejected(self):
+        cube = self.scrambled(3)
+        good_edges, good_corners = TUTORIAL_CASES[3][1], TUTORIAL_CASES[3][2]
+        bad = {
+            "swapped letters": ("TN cF KH Zc qB WA q", good_corners),
+            "wrong twist direction": (good_edges, "MP RK dZ e (gi)"),
+            "missing twist": (good_edges, "MP RK dZ e"),
+            "missing letter": ("TN Fc KH Zc qB WA", good_corners),
+            "extra letter": (good_edges, "MP RK dZ e (gh) A"),
+        }
+        for name, (edges, corners) in bad.items():
+            with self.subTest(name):
+                self.assertFalse(check_memo(cube, edges, corners).correct)
+
+    def test_result_reports_which_part_failed(self):
+        cube = self.scrambled(3)
+        result = check_memo(cube, TUTORIAL_CASES[3][1], "MP RK dZ e (gi)")
+        self.assertTrue(result.edges_ok)
+        self.assertFalse(result.corners_ok)
+        self.assertTrue(any("UBR" in m for m in result.messages))
+
+    def test_invalid_letters_reported_not_crash(self):
+        """Letters outside the scheme (edges have no I, O, U, V) fail with a message."""
+        cube = self.scrambled(0)
+        result = check_memo(cube, "HE PK IZ CM RW", "YG MJ QS")
+        self.assertFalse(result.edges_ok)
+        self.assertTrue(result.corners_ok)
+        self.assertIn("'I'", result.messages[0])
+        with self.assertRaises(ValueError):
+            parse_memo("AB,CD", 'edge')
+
+    def test_parity_flag(self):
+        """Cases 2, 4 and 5 have odd letter counts (parity); 1 and 3 do not."""
+        for n, (scramble, edges, corners) in enumerate(TUTORIAL_CASES, 1):
+            cube = Cube3BLD()
+            cube.scramble_wca(scramble)
+            self.assertEqual(check_memo(cube, edges, corners).has_parity, n in (2, 4, 5), f"case {n}")
+
+    def test_solved_cube_empty_memo(self):
+        self.assertTrue(check_memo(Cube3BLD(), "", "").correct)
+        self.assertFalse(check_memo(Cube3BLD(), "AB", "").correct)
+
+    def test_check_does_not_modify_cube(self):
+        cube = self.scrambled(0)
+        before = (list(cube.edges), list(cube.corners))
+        check_memo(cube, TUTORIAL_CASES[0][1], TUTORIAL_CASES[0][2])
+        self.assertEqual((cube.edges, cube.corners), before)
 
 
 if __name__ == '__main__':

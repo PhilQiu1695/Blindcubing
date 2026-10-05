@@ -6,6 +6,7 @@ The full spec and the step-by-step plan are in `design_doc.text`. Read it before
 starting a new workflow step.
 
 ## Files
+- `memo.py`: memo parser and checker (`parse_memo`, `execute_memo`, `check_memo`)
 - `cube_state.py`: the `Cube3BLD` class (state, letter maps, move engine, scramble parser)
 - `tests.py`: unittest suite, with one test class per workflow step, plus `StickerModel`, an independent reference simulator
 - `test-cases/`: tutorial scramble/memo photos (caseN.png, memoN.png); transcribed in `TUTORIAL_CASES` in `tests.py`
@@ -30,7 +31,9 @@ starting a new workflow step.
 - Workflow steps 1-3 are done: data structures, move engine and parser, and the
   sticker-model cross-check (`TestCube3BLDReference`).
 - Step 4 (memo spec) is decided; see "What is a valid memo?" and workflow step 4
-  in the design doc. Next is step 5, the memo executor/checker.
+  in the design doc. Step 5 (memo checker) is done in `memo.py`: `check_memo()`
+  ignores case/brackets/spaces and runs each letter as a buffer swap.
+  Next is step 6, the cycle tracer.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
 
 ## Working rules
