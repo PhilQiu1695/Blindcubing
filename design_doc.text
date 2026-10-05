@@ -22,10 +22,12 @@ What is a valid memo?
 4. Repeat steps 2-3 until hit buffer sticker
 5. For pieces in right place but wrong orientation, put all the letters at the end of its respective memo as a group
 #Example corner memo: Corners MP RK dZ e GHI (lowercase d and e mark cycle, two letters a group, GHI at the end marks the wrongly oriented piece)
-6. If no unrecorded edges: FINISH
+6. If no unrecorded pieces (edges or corners): FINISH
 7. For unrecorded: exist small cycles
-8. start at arbitrary unrecorded edge, record the position letter(with some for of notation to clarify, eg lowercase), not the sticker letter.
-9. steps 2, 3 repeat until hit the letter recorded in step 7 (or the other letter on that edge)
+8. start at arbitrary unrecorded piece, record the position letter in lowercase, not the sticker letter.
+9. steps 2, 3 repeat until hit the letter recorded in step 8 (or another sticker of that piece), and record that closing letter in lowercase
+#Small cycle rule: the start and closing letters are always written, both lowercase. They may be different stickers, as long as both are on the same piece (e.g. dZ e: d and e are both on the UBL corner).
+#Buffer in place: if the buffer piece is already in the buffer slot (solved, flipped or twisted) while other pieces are unsolved, skip step 2-4 and start a small cycle (step 8) straight away.
 
 A standard edge memo should have 11 letters(corner 7), add one for each small cycle, and subtract one for each piece in its right position
 When starting to record cycles for corners, have the first position letter be the one on the top/bottom face of the cube i.e. blue/green
@@ -109,16 +111,18 @@ A move engine can pass every self-consistency test and still be wrong (this happ
 
 
 
-4. **Decide the Memo Spec:** Steps 5-8 all depend on these rules. [OPEN - decisions needed]
+4. **Decide the Memo Spec:** Steps 5-8 all depend on these rules. [IN PROGRESS - 3 decided, 3 open]
 Write down exactly what a valid memo string looks like before building the checker.
 
-* **Decisions:**
-* Input format: allowed separators (spaces, letter pairs), case meaning (lowercase = cycle break).
-* Twisted corners / flipped edges in place: written as letter-pair small cycles (e.g. `gH`), or a separate group at the end. The notation must say which way the piece is twisted.
-* Closing letter of a small cycle: always recorded (it may be a different sticker of the start piece).
-* Buffer piece already in the buffer slot (solved, flipped or twisted): break into a new cycle straight away.
-* Parity: what the parity algorithm physically swaps, and how it changes the memo. Edge and corner parity are always equal.
+* **Decided:**
+* Small cycles: the start and closing letters are always written in lowercase. They may be different stickers of the same piece (see "What is a valid memo?" step 9).
+* Buffer piece already in the buffer slot (solved, flipped or twisted): start a small cycle straight away.
 * Scramble orientation: scramble in the WCA hold (white top, green front) and memo in green top / red front. Translate moves U->R, F->U, R->F, D->L, B->D, L->B.
+
+* **Open:**
+* Input format: allowed separators (spaces, letter pairs).
+* Twisted corners / flipped edges in place: written as small cycles (e.g. `gh`), or a separate group at the end. The notation must say which way the piece is twisted.
+* Parity: what the parity algorithm physically swaps, and how it changes the memo. Edge and corner parity are always equal.
 
 
 * **Verification Check:**
@@ -157,6 +161,8 @@ Implement blindfolded cycle tracing logic for edges and corners using JB rules.
 * Property test: for 1000+ random scrambles, feeding the tracer's memo to the Step 5 executor solves the cube.
 * Test against known simple scrambles:
 * Single swap target (e.g., `R2` or `U2`).
+* Buffer piece in place: solved, flipped (edge) and twisted (corner), each with other pieces unsolved.
+* Small cycles whose closing letter is a different sticker of the start piece.
 * Known benchmark scrambles from the Bilibili tutorial.
 * Verify generated edge memo string length and corner memo string length match hand-traced expectations.
 

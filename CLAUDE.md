@@ -28,7 +28,8 @@ starting a new workflow step.
 ## Status (as of 2026-10-05)
 - Workflow steps 1-3 are done: data structures, move engine and parser, and the
   sticker-model cross-check (`TestCube3BLDReference`).
-- Next is step 4, the memo spec. The parity rule, twist/flip notation and memo
+- Next is step 4, the memo spec. Small-cycle letters, buffer-in-place and scramble
+  orientation are decided. The parity rule, twist/flip notation and memo
   format are still undecided. Don't build steps 5-6 until the design doc
   records them.
 - Buffer stickers read as `#U` / `#F` / `#L`; use `Cube3BLD.is_buffer_letter()`.
