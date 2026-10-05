@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Cube } from '../js/cube.js';
-import { BldTimer, buildAttempt, formatTime } from '../js/timer.js';
+import { BldTimer, TimerControls, buildAttempt, formatTime } from '../js/timer.js';
 
 function fakeClock(start = 1000) {
   const clock = { t: start, now: () => clock.t, advance: (ms) => { clock.t += ms; } };
@@ -86,4 +86,49 @@ test('attempt record has every stored field and checks the memo', () => {
   assert.equal(dnf.result, 'DNF');
   assert.equal(dnf.memoCorrect, false);
   assert.deepEqual(dnf.memoMessages, ['Edges: memo leaves UF, DL unsolved']);
+});
+
+test('controls: memo and execution start on release, stop happens on press', () => {
+  const clock = fakeClock(0);
+  const timer = new BldTimer(clock.now);
+  const controls = new TimerControls(timer);
+
+  assert.equal(controls.down(), 'armed');
+  clock.advance(800);                       // holding does not start the clock
+  assert.equal(timer.phase, 'idle');
+  assert.equal(controls.up(), 'memo');      // release starts memo
+  clock.advance(30_000);
+  assert.equal(controls.down(), 'armed');
+  clock.advance(500);                       // still memo while held
+  assert.equal(timer.phase, 'memo');
+  assert.equal(controls.up(), 'exec');      // second release starts execution
+  clock.advance(60_000);
+  assert.equal(controls.down(), 'stopped'); // stop on press
+  assert.equal(timer.phase, 'done');
+  clock.advance(400);
+  assert.equal(controls.up(), null, 'releasing after the stop does nothing');
+  assert.deepEqual(timer.times(), { memo: 30_500, exec: 60_000, total: 90_500 });
+  assert.equal(controls.down(), null, 'nothing happens once stopped');
+});
+
+test('controls: held key repeats and cancelled holds do nothing', () => {
+  const timer = new BldTimer(fakeClock().now);
+  const controls = new TimerControls(timer);
+  assert.equal(controls.up(), null, 'release without a press');
+  controls.down();
+  controls.release();                       // e.g. finger slid off the timer
+  assert.equal(controls.up(), null);
+  assert.equal(timer.phase, 'idle');
+});
+
+test('controls: a blocked start is reported and never arms', () => {
+  const timer = new BldTimer(fakeClock().now);
+  let allowed = false;
+  const controls = new TimerControls(timer, () => allowed);
+  assert.equal(controls.down(), 'blocked');
+  assert.equal(controls.up(), null);
+  assert.equal(timer.phase, 'idle');
+  allowed = true;
+  assert.equal(controls.down(), 'armed');
+  assert.equal(controls.up(), 'memo');
 });

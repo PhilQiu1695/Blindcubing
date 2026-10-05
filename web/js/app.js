@@ -4,7 +4,7 @@ import { checkMemo, parseMemo, traceMemo } from './memo.js';
 import { generateScramble } from './scramble.js';
 import { netSvg, scrambleError } from './render.js';
 import { createCube3D } from './cube3d.js';
-import { BldTimer, buildAttempt, formatTime } from './timer.js';
+import { BldTimer, TimerControls, buildAttempt, formatTime } from './timer.js';
 import { computeStats, formatPercent, formatStat } from './stats.js';
 import { exportCsv, exportJson, importJson, loadHistory, nextAttemptNumber, saveHistory } from './storage.js';
 
@@ -33,6 +33,8 @@ const state = {
 };
 
 const timer = new BldTimer();
+// A new attempt can't start once this scramble was saved or its answer shown
+const controls = new TimerControls(timer, () => !state.attemptSaved && !state.answerSeen);
 
 const cube3d = createCube3D($('cube3d-container'));
 
@@ -203,10 +205,14 @@ function check(event) {
 // ---- Timer ----
 
 const STATUS = {
-  idle: 'Press space or tap the timer to start memo.',
-  memo: 'Memorising… press space / tap when the blindfold is on. Esc cancels.',
-  exec: 'Solving… press space / tap to stop. Esc cancels.',
+  idle: 'Hold space (or touch the timer) and release to start memo.',
+  memo: 'Memorising… blindfold on, then hold and release space / the timer to start solving. Esc cancels.',
+  exec: 'Solving… press space / tap the timer to stop. Esc cancels.',
   done: 'Stopped. Enter the memo you used, then save as Solved or DNF. Esc discards.',
+};
+const ARMED = {
+  idle: 'Release to start memo.',
+  memo: 'Release to start solving.',
 };
 
 let frame = null;
@@ -217,8 +223,9 @@ function renderTimer() {
   $('timer-total').textContent = formatTime(total);
   $('timer-memo').textContent = formatTime(memo);
   $('timer-exec').textContent = formatTime(exec);
-  $('timer').className = `timer phase-${timer.phase}`;
-  $('timer-status').textContent = idle ? state.idleNote ?? STATUS.idle : STATUS[timer.phase];
+  $('timer').className = `timer phase-${timer.phase}${controls.armed ? ' armed' : ''}`;
+  $('timer-status').textContent = controls.armed ? ARMED[timer.phase]
+    : idle ? state.idleNote ?? STATUS.idle : STATUS[timer.phase];
 
   // Lock anything that would reveal the answer or lose the attempt while timing
   const busy = timer.phase !== 'idle';
@@ -235,27 +242,34 @@ function renderTimer() {
   }
 }
 
-function pressTimer() {
-  if (timer.phase === 'done') return;
-  if (timer.phase === 'idle' && state.attemptSaved) {
-    state.idleNote = 'Attempt saved. Get a new scramble for the next one.';
-    renderTimer();
-    return;
+/** Space or finger down on the timer. */
+function timerDown() {
+  const outcome = controls.down();
+  if (outcome === 'blocked') {
+    state.idleNote = state.attemptSaved
+      ? 'Attempt saved. Get a new scramble for the next one.'
+      : 'The answer for this scramble has been shown. Get a new scramble to time an attempt.';
   }
-  if (timer.phase === 'idle' && state.answerSeen) {
-    state.idleNote = 'The answer for this scramble has been shown. Get a new scramble to time an attempt.';
-    renderTimer();
-    return;
+  if (outcome === 'stopped') $('edge-memo').focus();
+  renderTimer();
+}
+
+/** Space or finger up. */
+function timerUp() {
+  const phase = controls.up();
+  if (phase === 'memo') {
+    state.idleNote = null;
+    $('result').hidden = true;
   }
-  state.idleNote = null;
-  timer.press();
-  if (timer.phase === 'memo') $('result').hidden = true;
-  if (timer.phase === 'done') $('edge-memo').focus();
   renderTimer();
 }
 
 function cancelTimer() {
-  if (timer.phase === 'idle') return;
+  controls.release();
+  if (timer.phase === 'idle') {
+    renderTimer();
+    return;
+  }
   timer.cancel();
   state.idleNote = `Attempt cancelled; nothing saved. ${STATUS.idle}`;
   renderTimer();
@@ -301,14 +315,31 @@ document.addEventListener('keydown', (event) => {
   }
   if (event.code !== 'Space' || isTyping(event.target)) return;
   event.preventDefault(); // no page scroll, and no click on a focused button
-  if (!event.repeat) pressTimer();
+  if (!event.repeat) timerDown();
 });
 document.addEventListener('keyup', (event) => {
-  if (event.code === 'Space' && !isTyping(event.target)) event.preventDefault();
+  if (event.code !== 'Space' || isTyping(event.target)) return;
+  event.preventDefault();
+  timerUp();
 });
+// Touch / mouse: same hold-and-release rules as the space bar
 $('timer').addEventListener('pointerdown', (event) => {
   event.preventDefault();
-  pressTimer();
+  try {
+    $('timer').setPointerCapture(event.pointerId); // keep receiving pointerup if the finger drifts
+  } catch { /* not supported for this pointer */ }
+  timerDown();
+});
+$('timer').addEventListener('pointerup', timerUp);
+$('timer').addEventListener('pointercancel', () => {
+  controls.release();
+  renderTimer();
+});
+// Losing focus mid-hold (e.g. switching apps) must not start the timer later
+window.addEventListener('blur', () => {
+  if (!controls.armed) return;
+  controls.release();
+  renderTimer();
 });
 $('save-solved').addEventListener('click', () => saveAttempt(true));
 $('save-dnf').addEventListener('click', () => saveAttempt(false));

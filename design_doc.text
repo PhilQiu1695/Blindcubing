@@ -261,7 +261,7 @@ Port `cube_state.py`, `memo.py` and `visual.py` (grid logic only) to JavaScript 
 11. **Timer with Memo Split:** BLD timing. [DONE - js/timer.js (tested in Node), wired in js/app.js]
 
 * **Implementation:**
-* Space bar (desktop) or tap (phone): first press starts memo time, second press (blindfold on) ends memo and starts execution, third press stops.
+* Space bar (desktop) or touching the timer (phone), like a cubing timer: hold and release to start memo; hold and release again (blindfold on) to end memo and start execution; press to stop (stopping on press keeps the release delay out of the time). The timer turns green while held, ready to release. Losing focus or sliding the finger off cancels a hold.
 * After stopping: player enters the memo they used and marks the attempt solved or DNF.
 * The memo is checked automatically and its result stored alongside the attempt.
 * One timed attempt per scramble. While the clock runs (and until the attempt is saved or discarded), New scramble, Check and Show answer are locked.

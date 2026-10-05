@@ -167,6 +167,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .timer.phase-exec { border-color: var(--ok); }
 .timer.phase-exec .timer-total { color: var(--ok); }
 .timer.phase-done { border-color: var(--text); }
+/* Held down, waiting for release */
+.timer.armed { background: var(--ok-bg); border-color: var(--ok); }
+.timer.armed .timer-total { color: var(--ok); }
 
 .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -219,6 +222,12 @@ button.danger-outline { color: var(--bad); border-color: var(--bad); }
   width: 100%;
   display: flex;
   justify-content: center;
+  /* the whole area is the drag zone: no page scroll or zoom from touches here */
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   /* room for the tilted cube's corners, so it never covers the controls */
   padding: calc(var(--cube-size) * 0.32) 0 calc(var(--cube-size) * 0.36);
 }
@@ -226,11 +235,8 @@ button.danger-outline { color: var(--bad); border-color: var(--bad); }
   width: var(--cube-size);
   height: var(--cube-size);
   perspective: 900px;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
 }
-.scene.dragging { cursor: grabbing; }
+.cube3d-container.dragging { cursor: grabbing; }
 .cube3d {
   position: relative;
   width: 100%;

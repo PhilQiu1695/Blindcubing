@@ -88,3 +88,43 @@ export function buildAttempt({ number, scramble, cube, edges, corners, times, so
     date: date.toISOString(),
   };
 }
+
+/**
+ * Press/release handling, like a cubing timer. Starting memo and starting execution
+ * happen on release (hold, then let go); stopping happens on press, so the time
+ * isn't padded by lifting the finger. Same rules for the space bar and for touch.
+ */
+export class TimerControls {
+  /** canStart() says whether a new attempt may begin (e.g. not after Show answer). */
+  constructor(timer, canStart = () => true) {
+    this.timer = timer;
+    this.canStart = canStart;
+    this.armed = false;
+  }
+
+  /** Key/finger down. Returns 'stopped', 'armed', 'blocked' or null (nothing to do). */
+  down() {
+    const { phase } = this.timer;
+    if (phase === 'exec') {
+      this.armed = false;
+      this.timer.press();
+      return 'stopped';
+    }
+    if (phase === 'done') return null;
+    if (phase === 'idle' && !this.canStart()) return 'blocked';
+    this.armed = true;
+    return 'armed';
+  }
+
+  /** Key/finger up. Returns the new phase if the timer advanced, otherwise null. */
+  up() {
+    if (!this.armed) return null;
+    this.armed = false;
+    return this.timer.press();
+  }
+
+  /** Forget a hold without acting (Esc, finger slid off, window lost focus). */
+  release() {
+    this.armed = false;
+  }
+}

@@ -34,15 +34,18 @@ export function createCube3D(container) {
   };
   apply();
 
-  // Drag (mouse) or swipe (touch) to rotate
+  // Drag (mouse) or swipe (touch) to rotate. The whole area around the cube is the drag
+  // zone: the tilted cube sticks out past its own box, and a touch there must not scroll.
   let drag = null;
-  scene.addEventListener('pointerdown', (e) => {
-    drag = { x: e.clientX, y: e.clientY, view: { ...view } };
-    scene.setPointerCapture(e.pointerId);
-    scene.classList.add('dragging');
+  container.addEventListener('pointerdown', (e) => {
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, view: { ...view } };
+    try {
+      container.setPointerCapture(e.pointerId);
+    } catch { /* not supported for this pointer */ }
+    container.classList.add('dragging');
   });
-  scene.addEventListener('pointermove', (e) => {
-    if (!drag) return;
+  container.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
     view = {
       x: drag.view.x - (e.clientY - drag.y) * 0.5,
       y: drag.view.y + (e.clientX - drag.x) * 0.5,
@@ -51,10 +54,15 @@ export function createCube3D(container) {
   });
   const endDrag = () => {
     drag = null;
-    scene.classList.remove('dragging');
+    container.classList.remove('dragging');
   };
-  scene.addEventListener('pointerup', endDrag);
-  scene.addEventListener('pointercancel', endDrag);
+  container.addEventListener('pointerup', endDrag);
+  container.addEventListener('pointercancel', endDrag);
+  // iOS Safari doesn't always honour touch-action on 3D-transformed content,
+  // so block page scrolling for touches that start in the drag zone explicitly
+  const noScroll = (e) => e.preventDefault();
+  container.addEventListener('touchstart', noScroll, { passive: false });
+  container.addEventListener('touchmove', noScroll, { passive: false });
 
   return {
     update(cube, { letters = false } = {}) {
