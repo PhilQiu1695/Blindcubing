@@ -1,14 +1,18 @@
 // Service worker: keeps the site working offline after the first visit.
 // Serves files from the cache straight away and refreshes the cache in the background,
 // so a new deploy shows up on the next reload.
-const CACHE = 'bld-trainer-v1';
+const CACHE = 'bld-trainer-v2';
 const FILES = [
   './',
   'index.html',
   'css/style.css',
+  'js/analytics.js',
   'js/app.js',
+  'js/config.js',
   'js/cube.js',
   'js/cube3d.js',
+  'js/feedback.js',
+  'js/i18n.js',
   'js/memo.js',
   'js/render.js',
   'js/scramble.js',

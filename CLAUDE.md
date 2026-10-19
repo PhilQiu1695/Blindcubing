@@ -10,6 +10,11 @@ starting a new workflow step.
 - `web/index.html`, `web/css/style.css`, `web/js/app.js` (UI wiring), `render.js` (sticker data + SVG net, DOM-free and
   tested), `cube3d.js` (CSS 3D cube), `timer.js` (memo-split timer + attempt records), `stats.js` (success rate, best, mo3, ao12),
   `storage.js` (localStorage, JSON/CSV export, JSON import); all DOM-free and tested
+- `i18n.js`: English/Chinese UI text (`STRINGS`, `t`, `translateMessage` for checker/scramble messages); elements in
+  `index.html` use `data-i18n*` attributes. Letters, moves and piece names are never translated. New UI text needs both languages
+  (a test enforces this). `?lang=en|zh` forces a language
+- `feedback.js` (feedback form, sent via Web3Forms), `analytics.js` (GoatCounter visit counter); keys live in `config.js`
+  (empty = feature off). Python and test vectors are unaffected by these
 - `export_vectors.py`: writes `web/test_vectors.json` from the Python code
 - `memo.py`: memo parser and checker (`parse_memo`, `execute_memo`, `check_memo`) and cycle tracer (`trace_memo`)
 - `trainer.py`: CLI trainer (`generate_scramble`, `Trainer`); I/O is injectable for tests

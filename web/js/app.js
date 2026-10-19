@@ -7,6 +7,10 @@ import { createCube3D } from './cube3d.js';
 import { BldTimer, TimerControls, buildAttempt, formatTime } from './timer.js';
 import { computeStats, formatPercent, formatStat } from './stats.js';
 import { exportCsv, exportJson, importJson, loadHistory, nextAttemptNumber, saveHistory } from './storage.js';
+import { LANG_KEY, applyTranslations, pickLanguage, t, translateMessage } from './i18n.js';
+import { MAX_MESSAGE, feedbackContext, feedbackError, feedbackPayload, sendFeedback } from './feedback.js';
+import { startAnalytics, trackEvent } from './analytics.js';
+import { GOATCOUNTER_CODE, WEB3FORMS_ACCESS_KEY } from './config.js';
 
 // localStorage can be unavailable (privacy settings); fall back to a store that never keeps anything
 const storage = (() => {
@@ -19,6 +23,15 @@ const storage = (() => {
 
 const $ = (id) => document.getElementById(id);
 
+const params = new URLSearchParams(location.search);
+let lang = pickLanguage({
+  param: params.get('lang'),
+  saved: (() => { try { return storage.getItem(LANG_KEY); } catch { return null; } })(),
+  browser: navigator.languages ?? [navigator.language],
+});
+const tr = (key, vars) => t(lang, key, vars);
+const msg = (message) => translateMessage(lang, message);
+
 const state = {
   scramble: '',
   cube: new Cube(),
@@ -29,7 +42,7 @@ const state = {
   attemptSaved: false, // one timed attempt per scramble
   history: loadHistory(storage), // timed attempt records, oldest first
   lastTimes: null,     // times kept on screen after an attempt is saved
-  idleNote: null,      // status message shown while the timer is idle
+  idleNote: null,      // () => status message shown while the timer is idle (re-read on language change)
 };
 
 const timer = new BldTimer();
@@ -62,17 +75,21 @@ function setScramble(scramble) {
   state.answerSeen = false;
   state.showSolved = false;
   setPressed('state', 'scramble');
-  $('scramble-text').textContent = scramble || '(solved cube)';
+  renderScrambleText();
   $('edge-memo').value = '';
   $('corner-memo').value = '';
   $('result').hidden = true;
   renderCube();
 }
 
+function renderScrambleText() {
+  $('scramble-text').textContent = state.scramble || tr('scramble.solvedCube');
+}
+
 function referenceHtml() {
   const [edges, corners] = traceMemo(state.cube);
-  return `<dl><dt>Edges</dt><dd>${escapeHtml(edges) || '(solved)'}</dd>`
-    + `<dt>Corners</dt><dd>${escapeHtml(corners) || '(solved)'}</dd></dl>`;
+  return `<dl><dt>${tr('memo.edges')}</dt><dd>${escapeHtml(edges) || tr('result.solvedPart')}</dd>`
+    + `<dt>${tr('memo.corners')}</dt><dd>${escapeHtml(corners) || tr('result.solvedPart')}</dd></dl>`;
 }
 
 function showResult(kind, html) {
@@ -92,27 +109,27 @@ function statTile(label, value, sub = '') {
 function renderStats() {
   const s = computeStats(state.history);
   $('stats').innerHTML = [
-    statTile('Attempts', String(s.attempts), `${s.solved} solved`),
-    statTile('Success rate', formatPercent(s.successRate)),
-    statTile('Best', formatStat(s.best)),
-    statTile('mo3', formatStat(s.mo3.current), `best ${formatStat(s.mo3.best)}`),
-    statTile('ao12', formatStat(s.ao12.current), `best ${formatStat(s.ao12.best)}`),
-    statTile('Memo accuracy', formatPercent(s.memoAccuracy)),
+    statTile(tr('stats.attempts'), String(s.attempts), tr('stats.solvedCount', { n: s.solved })),
+    statTile(tr('stats.successRate'), formatPercent(s.successRate)),
+    statTile(tr('stats.best'), formatStat(s.best)),
+    statTile('mo3', formatStat(s.mo3.current), tr('stats.bestOf', { time: formatStat(s.mo3.best) })),
+    statTile('ao12', formatStat(s.ao12.current), tr('stats.bestOf', { time: formatStat(s.ao12.best) })),
+    statTile(tr('stats.memoAccuracy'), formatPercent(s.memoAccuracy)),
   ].join('');
 
   const rows = [...state.history].reverse().map((a) => {
-    const date = new Date(a.date).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
-    const details = `<details><summary>Show</summary><dl>`
-      + `<dt>Scramble</dt><dd>${escapeHtml(a.scramble)}</dd>`
-      + `<dt>Your edges</dt><dd>${escapeHtml(a.memo.edges) || '-'}</dd>`
-      + `<dt>Your corners</dt><dd>${escapeHtml(a.memo.corners) || '-'}</dd>`
-      + `<dt>Ref. edges</dt><dd>${escapeHtml(a.reference.edges) || '(solved)'}</dd>`
-      + `<dt>Ref. corners</dt><dd>${escapeHtml(a.reference.corners) || '(solved)'}</dd>`
+    const date = new Date(a.date).toLocaleString(lang === 'zh' ? 'zh-CN' : undefined, { dateStyle: 'short', timeStyle: 'short' });
+    const details = `<details><summary>${tr('stats.show')}</summary><dl>`
+      + `<dt>${tr('stats.d.scramble')}</dt><dd>${escapeHtml(a.scramble)}</dd>`
+      + `<dt>${tr('stats.d.yourEdges')}</dt><dd>${escapeHtml(a.memo.edges) || '-'}</dd>`
+      + `<dt>${tr('stats.d.yourCorners')}</dt><dd>${escapeHtml(a.memo.corners) || '-'}</dd>`
+      + `<dt>${tr('stats.d.refEdges')}</dt><dd>${escapeHtml(a.reference.edges) || tr('result.solvedPart')}</dd>`
+      + `<dt>${tr('stats.d.refCorners')}</dt><dd>${escapeHtml(a.reference.corners) || tr('result.solvedPart')}</dd>`
       + `</dl></details>`;
     return `<tr><td>${a.number}</td>`
-      + `<td class="${a.result === 'DNF' ? 'dnf' : 'ok'}">${a.result === 'DNF' ? 'DNF' : 'Solved'}</td>`
+      + `<td class="${a.result === 'DNF' ? 'dnf' : 'ok'}">${a.result === 'DNF' ? 'DNF' : tr('memo.solved')}</td>`
       + `<td>${formatTime(a.totalTime)}</td><td>${formatTime(a.memoTime)}</td><td>${formatTime(a.execTime)}</td>`
-      + `<td>${a.memoCorrect ? 'correct' : 'wrong'}</td><td>${escapeHtml(date)}</td><td>${details}</td></tr>`;
+      + `<td>${tr(a.memoCorrect ? 'stats.correct' : 'stats.wrong')}</td><td>${escapeHtml(date)}</td><td>${details}</td></tr>`;
   });
   $('history').tBodies[0].innerHTML = rows.join('');
   $('history').hidden = state.history.length === 0;
@@ -121,7 +138,7 @@ function renderStats() {
 
 function persist() {
   if (!saveHistory(storage, state.history)) {
-    $('history-note').textContent = 'Your browser blocked saving, so history will be lost on reload. Export to keep it.';
+    $('history-note').textContent = tr('stats.saveBlocked');
   }
 }
 
@@ -150,22 +167,22 @@ $('import-json').addEventListener('change', async (event) => {
   if (!file) return;
   try {
     const attempts = importJson(await file.text());
-    if (state.history.length && !confirm(`Replace your ${state.history.length} saved attempts with ${attempts.length} from ${file.name}?`)) return;
+    if (state.history.length && !confirm(tr('stats.confirmImport', { count: state.history.length, n: attempts.length, file: file.name }))) return;
     state.history = attempts;
     persist();
     renderStats();
-    $('history-note').textContent = `Imported ${attempts.length} attempts from ${file.name}.`;
+    $('history-note').textContent = tr('stats.imported', { n: attempts.length, file: file.name });
   } catch (err) {
-    $('history-note').textContent = `Import failed: ${err.message}.`;
+    $('history-note').textContent = tr('stats.importFailed', { error: msg(err.message) });
   }
 });
 $('clear-history').addEventListener('click', () => {
   if (!state.history.length) return;
-  if (!confirm(`Delete all ${state.history.length} saved attempts? Export first if you want to keep them.`)) return;
+  if (!confirm(tr('stats.confirmClear', { n: state.history.length }))) return;
   state.history = [];
   persist();
   renderStats();
-  $('history-note').textContent = 'History cleared.';
+  $('history-note').textContent = tr('stats.cleared');
 });
 
 /** Bad letters: ask again instead of scoring (as in the CLI). Returns true if the memo is usable. */
@@ -174,7 +191,7 @@ function memoLettersValid(edges, corners) {
     try {
       parseMemo(text, kind);
     } catch (err) {
-      showResult('bad', `<h3>Check your input</h3><p>${escapeHtml(err.message)}.</p>`);
+      showResult('bad', `<h3>${tr('result.checkInput')}</h3><p>${escapeHtml(msg(err.message))}${lang === 'zh' ? '。' : '.'}</p>`);
       $(input).focus();
       return false;
     }
@@ -198,32 +215,24 @@ function check(event) {
   // Practice check: not an attempt, and it doesn't reveal the reference memo,
   // so the scramble can still be timed afterwards (only Show answer blocks that)
   const result = checkMemo(state.cube, edges, corners);
+  trackEvent('memo-check');
   const memorising = timer.phase === 'memo';
-  const parity = result.has_parity ? '<span class="badge">parity</span>' : '';
+  const parity = result.has_parity ? `<span class="badge">${tr('result.parity')}</span>` : '';
   if (result.correct) {
-    const next = memorising ? 'Blindfold on and start solving when ready.' : 'You can now time this scramble.';
-    showResult('ok', `<h3>Memo correct!${parity}</h3><p>${next}</p>`);
+    const next = tr(memorising ? 'result.correctMemo' : 'result.correctIdle');
+    showResult('ok', `<h3>${tr('result.correct')}${parity}</h3><p>${next}</p>`);
   } else {
     // The messages name unsolved pieces, which is a hint, so they stay hidden until asked for
-    const items = result.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('');
-    const next = memorising ? 'Fix your memo and check again.'
-      : 'Fix your memo and check again, or use Show answer to see the reference memo.';
-    showResult('bad', `<h3>Memo wrong</h3><p>${next}</p>${spoiler("Show what's wrong", `<ul>${items}</ul>`)}`);
+    const items = result.messages.map((m) => `<li>${escapeHtml(msg(m))}</li>`).join('');
+    const next = tr(memorising ? 'result.wrongMemo' : 'result.wrongIdle');
+    showResult('bad', `<h3>${tr('result.wrong')}</h3><p>${next}</p>${spoiler(tr('result.showWrong'), `<ul>${items}</ul>`)}`);
   }
 }
 
 // ---- Timer ----
 
-const STATUS = {
-  idle: 'Hold space (or touch the timer) and release to start memo.',
-  memo: 'Memorising… you can type and check your memo below. Blindfold on, then hold and release space / the timer to start solving. Esc cancels.',
-  exec: 'Solving… press space / tap the timer to stop. Esc cancels.',
-  done: 'Stopped. Enter the memo you used, then save as Solved or DNF. Esc discards.',
-};
-const ARMED = {
-  idle: 'Release to start memo.',
-  memo: 'Release to start solving.',
-};
+const status = (phase) => tr(`timer.status.${phase}`);
+const armedStatus = (phase) => tr(`timer.armed.${phase}`);
 
 let frame = null;
 
@@ -234,8 +243,8 @@ function renderTimer() {
   $('timer-memo').textContent = formatTime(memo);
   $('timer-exec').textContent = formatTime(exec);
   $('timer').className = `timer phase-${timer.phase}${controls.armed ? ' armed' : ''}`;
-  $('timer-status').textContent = controls.armed ? ARMED[timer.phase]
-    : idle ? state.idleNote ?? STATUS.idle : STATUS[timer.phase];
+  $('timer-status').textContent = controls.armed ? armedStatus(timer.phase)
+    : idle ? state.idleNote?.() ?? status('idle') : status(timer.phase);
 
   // Lock anything that would reveal the answer or lose the attempt while timing
   const busy = timer.phase !== 'idle';
@@ -257,9 +266,8 @@ function renderTimer() {
 function timerDown() {
   const outcome = controls.down();
   if (outcome === 'blocked') {
-    state.idleNote = state.attemptSaved
-      ? 'Attempt saved. Use Try again to redo this scramble, or get a new one.'
-      : 'The answer for this scramble has been shown. Use Try again to redo it, or get a new scramble.';
+    const key = state.attemptSaved ? 'timer.blocked.saved' : 'timer.blocked.answer';
+    state.idleNote = () => tr(key);
   }
   if (outcome === 'stopped') $('edge-memo').focus();
   renderTimer();
@@ -282,7 +290,7 @@ function cancelTimer() {
     return;
   }
   timer.cancel();
-  state.idleNote = `Attempt cancelled; nothing saved. ${STATUS.idle}`;
+  state.idleNote = () => tr('timer.cancelled', { idle: status('idle') });
   renderTimer();
 }
 
@@ -300,21 +308,23 @@ function saveAttempt(solved) {
   persist();
   renderStats();
 
-  const times = `<dl><dt>Total</dt><dd>${formatTime(attempt.totalTime)}</dd>`
-    + `<dt>Memo</dt><dd>${formatTime(attempt.memoTime)}</dd>`
-    + `<dt>Execution</dt><dd>${formatTime(attempt.execTime)}</dd></dl>`;
+  trackEvent('attempt-saved');
+
+  const times = `<dl><dt>${tr('result.total')}</dt><dd>${formatTime(attempt.totalTime)}</dd>`
+    + `<dt>${tr('result.memo')}</dt><dd>${formatTime(attempt.memoTime)}</dd>`
+    + `<dt>${tr('result.exec')}</dt><dd>${formatTime(attempt.execTime)}</dd></dl>`;
   // What went wrong and the reference memo stay hidden, so Try again is still a fair retry
   const memoLine = attempt.memoCorrect
-    ? '<p>Memo check: correct.</p>'
-    : `<p>Memo check: wrong.</p>${spoiler("Show what's wrong",
-      `<ul>${attempt.memoMessages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`)}`;
+    ? `<p>${tr('result.memoCheckCorrect')}</p>`
+    : `<p>${tr('result.memoCheckWrong')}</p>${spoiler(tr('result.showWrong'),
+      `<ul>${attempt.memoMessages.map((m) => `<li>${escapeHtml(msg(m))}</li>`).join('')}</ul>`)}`;
   showResult(solved ? 'ok' : 'bad',
-    `<h3>Attempt #${attempt.number}: ${solved ? 'Solved' : 'DNF'}</h3>${times}${memoLine}`
-    + spoiler('Show reference memo', referenceHtml()));
+    `<h3>${tr('result.attempt', { n: attempt.number, result: solved ? tr('memo.solved') : 'DNF' })}</h3>${times}${memoLine}`
+    + spoiler(tr('result.showReference'), referenceHtml()));
 
   // Keep the final times on screen; the timer itself is ready for the next scramble
   state.lastTimes = timer.times();
-  state.idleNote = `Saved attempt #${attempt.number}. Try again, or get a new scramble for the next one.`;
+  state.idleNote = () => tr('timer.savedNote', { n: attempt.number });
   timer.reset();
   renderTimer();
 }
@@ -360,7 +370,7 @@ $('save-dnf').addEventListener('click', () => saveAttempt(false));
 function reveal() {
   if (timer.phase !== 'idle') return;
   state.answerSeen = true;
-  showResult('info', `<h3>Answer (not scored)</h3>${referenceHtml()}`);
+  showResult('info', `<h3>${tr('result.answer')}</h3>${referenceHtml()}`);
 }
 
 function setPressed(group, value) {
@@ -394,7 +404,7 @@ $('own-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const scramble = $('own-scramble').value.trim().replace(/\s+/g, ' ');
   const error = scrambleError(scramble);
-  $('own-error').textContent = error ?? '';
+  $('own-error').textContent = error ? msg(error) : '';
   if (!error) setScramble(scramble);
 });
 
@@ -406,15 +416,79 @@ bindSegmented('view', (v) => { state.view = v; });
 bindSegmented('stickers', (v) => { state.letters = v === 'letters'; });
 bindSegmented('state', (v) => { state.showSolved = v === 'solved'; });
 
+// ---- Language ----
+
+function setLanguage(next) {
+  lang = next;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  applyTranslations(document, lang);
+  $('lang-toggle').lang = lang === 'zh' ? 'en' : 'zh-CN';
+  renderScrambleText();
+  renderTimer();
+  renderStats();
+  // A shown result is plain HTML in the old language; hide it rather than mix languages
+  $('result').hidden = true;
+  $('own-error').textContent = '';
+  $('feedback-status').textContent = '';
+}
+
+$('lang-toggle').addEventListener('click', () => {
+  setLanguage(lang === 'zh' ? 'en' : 'zh');
+  try {
+    storage.setItem(LANG_KEY, lang);
+  } catch { /* the choice just won't be remembered */ }
+});
+
+// ---- Feedback ----
+
+function feedbackStatus(kind, text) {
+  $('feedback-status').className = `hint ${kind}`;
+  $('feedback-status').textContent = text;
+}
+
+$('feedback-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!WEB3FORMS_ACCESS_KEY) {
+    feedbackStatus('bad', tr('feedback.notSetUp'));
+    return;
+  }
+  const message = $('feedback-message').value;
+  const error = feedbackError(message);
+  if (error) {
+    feedbackStatus('bad', tr(error, { n: MAX_MESSAGE }));
+    $('feedback-message').focus();
+    return;
+  }
+  const context = $('feedback-attach').checked ? feedbackContext({
+    scramble: state.scramble, cube: state.cube, edges: $('edge-memo').value, corners: $('corner-memo').value,
+  }) : null;
+  const payload = feedbackPayload({
+    accessKey: WEB3FORMS_ACCESS_KEY, message, contact: $('feedback-contact').value, context, lang,
+    page: location.href, userAgent: navigator.userAgent,
+  });
+  $('feedback-send').disabled = true;
+  feedbackStatus('', tr('feedback.sending'));
+  try {
+    await sendFeedback(payload);
+    feedbackStatus('ok', tr('feedback.sent'));
+    $('feedback-message').value = '';
+    trackEvent('feedback-sent');
+  } catch (err) {
+    feedbackStatus('bad', tr('feedback.failed', { error: err.message }));
+  } finally {
+    $('feedback-send').disabled = false;
+  }
+});
+
 // URL options (handy for sharing and testing):
-// ?scramble=R U R'  &view=3d|net  &stickers=colours|letters  &state=scramble|solved
-const params = new URLSearchParams(location.search);
+// ?scramble=R U R'  &view=3d|net  &stickers=colours|letters  &state=scramble|solved  &lang=en|zh
 const option = (name, values) => (values.includes(params.get(name)) ? params.get(name) : null);
 const initial = {
   view: option('view', ['3d', 'net']),
   stickers: option('stickers', ['colours', 'letters']),
   state: option('state', ['scramble', 'solved']),
 };
+setLanguage(lang);
 const fromUrl = params.get('scramble');
 setScramble(fromUrl !== null && !scrambleError(fromUrl) ? fromUrl.trim().replace(/\s+/g, ' ') : generateScramble());
 
@@ -423,6 +497,8 @@ if (initial.stickers) document.querySelector(`[data-stickers="${initial.stickers
 if (initial.state) document.querySelector(`[data-state="${initial.state}"]`).click();
 
 renderStats();
+
+startAnalytics(GOATCOUNTER_CODE);
 
 // Offline support (needs https or localhost)
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>3BLD Memo Trainer</title>
+  <title data-i18n="page.title">3BLD Memo Trainer</title>
   <meta name="description" content="3BLD blindfolded memo trainer for the JB letter scheme: scrambles, memo checking, memo-split timer and statistics.">
   <meta name="theme-color" content="#2456c9">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect x='1' y='1' width='8' height='8' rx='1.5' fill='%231e9e4a'/%3E%3Crect x='11' y='1' width='8' height='8' rx='1.5' fill='%23d6283c'/%3E%3Crect x='21' y='1' width='8' height='8' rx='1.5' fill='%23f7d417'/%3E%3Crect x='1' y='11' width='8' height='8' rx='1.5' fill='%231f5bd1'/%3E%3Crect x='11' y='11' width='8' height='8' rx='1.5' fill='%23f4f4f0' stroke='%23999' stroke-width='.5'/%3E%3Crect x='21' y='11' width='8' height='8' rx='1.5' fill='%23f5862a'/%3E%3Crect x='1' y='21' width='8' height='8' rx='1.5' fill='%23d6283c'/%3E%3Crect x='11' y='21' width='8' height='8' rx='1.5' fill='%23f7d417'/%3E%3Crect x='21' y='21' width='8' height='8' rx='1.5' fill='%231e9e4a'/%3E%3C/svg%3E">
@@ -11,54 +11,57 @@
 </head>
 <body>
   <header class="site-header">
-    <h1>3BLD Memo Trainer</h1>
-    <p class="subtitle">JB letter scheme · edge buffer UF · corner buffer UFL</p>
-    <p class="credit">Based on the tutorial
+    <div class="header-top">
+      <h1 data-i18n="header.title">3BLD Memo Trainer</h1>
+      <button id="lang-toggle" type="button" class="small" lang="zh" data-i18n="lang.switch" data-i18n-aria-label="lang.switchLabel" aria-label="Switch to Chinese">中文</button>
+    </div>
+    <p class="subtitle" data-i18n="header.subtitle">JB letter scheme · edge buffer UF · corner buffer UFL</p>
+    <p class="credit"><span data-i18n="header.credit.before">Based on the tutorial</span>
       <a href="https://www.bilibili.com/video/BV1jm9eBoEgA/?p=3" target="_blank" rel="noopener"><span lang="zh">【JB法】三阶盲拧入门教程——用一条公式实现盲拧魔方！</span></a>
-      (Bilibili)</p>
+      <span data-i18n="header.credit.after">(Bilibili)</span></p>
   </header>
 
   <main class="layout">
     <section class="panel" aria-labelledby="scramble-heading">
-      <h2 id="scramble-heading">Scramble</h2>
-      <p class="hint">Scramble with <strong>white top, green front</strong>, then memo holding <strong>green top, red front</strong>.</p>
+      <h2 id="scramble-heading" data-i18n="scramble.heading">Scramble</h2>
+      <p class="hint" data-i18n-html="scramble.hint">Scramble with <strong>white top, green front</strong>, then memo holding <strong>green top, red front</strong>.</p>
       <p id="scramble-text" class="scramble" aria-live="polite"></p>
       <div class="row">
-        <button id="new-scramble" type="button" class="primary">New scramble</button>
-        <button id="retry" type="button">Try again</button>
-        <button id="toggle-own" type="button" aria-expanded="false" aria-controls="own-form">Enter my own</button>
+        <button id="new-scramble" type="button" class="primary" data-i18n="scramble.new">New scramble</button>
+        <button id="retry" type="button" data-i18n="scramble.retry">Try again</button>
+        <button id="toggle-own" type="button" aria-expanded="false" aria-controls="own-form" data-i18n="scramble.own">Enter my own</button>
       </div>
       <form id="own-form" class="own-form" hidden>
-        <label for="own-scramble">Scramble (WCA hold)</label>
+        <label for="own-scramble" data-i18n="scramble.ownLabel">Scramble (WCA hold)</label>
         <div class="row">
           <input id="own-scramble" type="text" autocomplete="off" spellcheck="false" placeholder="R U R' U' …">
-          <button type="submit">Use</button>
+          <button type="submit" data-i18n="scramble.use">Use</button>
         </div>
         <p id="own-error" class="error" role="alert"></p>
       </form>
 
-      <h2>Timer</h2>
+      <h2 data-i18n="timer.heading">Timer</h2>
       <div id="timer" class="timer" role="button" tabindex="0" aria-describedby="timer-status">
         <div id="timer-total" class="timer-total">0.00</div>
-        <div class="timer-split">memo <span id="timer-memo">0.00</span> · execution <span id="timer-exec">0.00</span></div>
+        <div class="timer-split"><span data-i18n="timer.memo">memo</span> <span id="timer-memo">0.00</span> · <span data-i18n="timer.exec">execution</span> <span id="timer-exec">0.00</span></div>
       </div>
       <p id="timer-status" class="hint" aria-live="polite"></p>
 
-      <h2>Your memo</h2>
+      <h2 data-i18n="memo.heading">Your memo</h2>
       <form id="memo-form" class="memo-form">
-        <label for="edge-memo">Edges</label>
-        <input id="edge-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. HE PK JZ CM RW">
-        <label for="corner-memo">Corners</label>
-        <input id="corner-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. YG MJ QS">
-        <p class="hint">Case, brackets and spaces are ignored.</p>
+        <label for="edge-memo" data-i18n="memo.edges">Edges</label>
+        <input id="edge-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. HE PK JZ CM RW" data-i18n-placeholder="memo.edgesPlaceholder">
+        <label for="corner-memo" data-i18n="memo.corners">Corners</label>
+        <input id="corner-memo" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. YG MJ QS" data-i18n-placeholder="memo.cornersPlaceholder">
+        <p class="hint" data-i18n="memo.hint">Case, brackets and spaces are ignored.</p>
         <div id="check-row" class="row">
-          <button id="check" type="submit" class="primary">Check</button>
-          <button id="reveal" type="button">Show answer</button>
+          <button id="check" type="submit" class="primary" data-i18n="memo.check">Check</button>
+          <button id="reveal" type="button" data-i18n="memo.reveal">Show answer</button>
         </div>
         <div id="save-row" class="row" hidden>
-          <span class="save-label">Save attempt as:</span>
-          <button id="save-solved" type="button" class="primary">Solved</button>
-          <button id="save-dnf" type="button" class="danger">DNF</button>
+          <span class="save-label" data-i18n="memo.saveAs">Save attempt as:</span>
+          <button id="save-solved" type="button" class="primary" data-i18n="memo.solved">Solved</button>
+          <button id="save-dnf" type="button" class="danger" data-i18n="memo.dnf">DNF</button>
         </div>
       </form>
 
@@ -66,48 +69,68 @@
     </section>
 
     <section class="panel" aria-labelledby="cube-heading">
-      <h2 id="cube-heading">Cube</h2>
+      <h2 id="cube-heading" data-i18n="cube.heading">Cube</h2>
       <div class="controls">
-        <div class="segmented" role="group" aria-label="View">
+        <div class="segmented" role="group" aria-label="View" data-i18n-aria-label="cube.view">
           <button type="button" data-view="3d" aria-pressed="true">3D</button>
-          <button type="button" data-view="net" aria-pressed="false">Net</button>
+          <button type="button" data-view="net" aria-pressed="false" data-i18n="cube.net">Net</button>
         </div>
-        <div class="segmented" role="group" aria-label="Stickers">
-          <button type="button" data-stickers="colours" aria-pressed="true">Colours</button>
-          <button type="button" data-stickers="letters" aria-pressed="false">Letters</button>
+        <div class="segmented" role="group" aria-label="Stickers" data-i18n-aria-label="cube.stickers">
+          <button type="button" data-stickers="colours" aria-pressed="true" data-i18n="cube.colours">Colours</button>
+          <button type="button" data-stickers="letters" aria-pressed="false" data-i18n="cube.letters">Letters</button>
         </div>
-        <div class="segmented" role="group" aria-label="State">
-          <button type="button" data-state="scramble" aria-pressed="true">Scramble</button>
-          <button type="button" data-state="solved" aria-pressed="false">Solved (scheme)</button>
+        <div class="segmented" role="group" aria-label="State" data-i18n-aria-label="cube.state">
+          <button type="button" data-state="scramble" aria-pressed="true" data-i18n="cube.scramble">Scramble</button>
+          <button type="button" data-state="solved" aria-pressed="false" data-i18n="cube.solved">Solved (scheme)</button>
         </div>
       </div>
       <div id="view-3d" class="view-3d">
         <div id="cube3d-container" class="cube3d-container"></div>
-        <button id="reset-view" type="button" class="small">Reset view</button>
-        <p class="hint">Drag or swipe to rotate.</p>
+        <button id="reset-view" type="button" class="small" data-i18n="cube.resetView">Reset view</button>
+        <p class="hint" data-i18n="cube.dragHint">Drag or swipe to rotate.</p>
       </div>
       <div id="view-net" class="view-net" hidden></div>
     </section>
 
     <section class="panel wide" aria-labelledby="stats-heading">
-      <h2 id="stats-heading">Statistics &amp; history</h2>
+      <h2 id="stats-heading" data-i18n="stats.heading">Statistics &amp; history</h2>
       <div id="stats" class="stats"></div>
       <div class="row history-actions">
-        <button id="export-json" type="button">Export JSON</button>
-        <button id="export-csv" type="button">Export CSV</button>
-        <label class="file-button">Import JSON<input id="import-json" type="file" accept=".json,application/json"></label>
-        <button id="clear-history" type="button" class="danger-outline">Clear history</button>
+        <button id="export-json" type="button" data-i18n="stats.exportJson">Export JSON</button>
+        <button id="export-csv" type="button" data-i18n="stats.exportCsv">Export CSV</button>
+        <label class="file-button"><span data-i18n="stats.importJson">Import JSON</span><input id="import-json" type="file" accept=".json,application/json"></label>
+        <button id="clear-history" type="button" class="danger-outline" data-i18n="stats.clear">Clear history</button>
       </div>
       <p id="history-note" class="hint" role="status"></p>
       <div class="table-wrap">
         <table id="history" class="history">
           <thead>
-            <tr><th>#</th><th>Result</th><th>Total</th><th>Memo</th><th>Execution</th><th>Memo check</th><th>Date</th><th>Details</th></tr>
+            <tr><th>#</th><th data-i18n="stats.col.result">Result</th><th data-i18n="stats.col.total">Total</th><th data-i18n="stats.col.memo">Memo</th><th data-i18n="stats.col.exec">Execution</th><th data-i18n="stats.col.check">Memo check</th><th data-i18n="stats.col.date">Date</th><th data-i18n="stats.col.details">Details</th></tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
-      <p id="history-empty" class="hint">No timed attempts yet. Use the timer above, then save as Solved or DNF.</p>
+      <p id="history-empty" class="hint" data-i18n="stats.empty">No timed attempts yet. Use the timer above, then save as Solved or DNF.</p>
+    </section>
+
+    <section class="panel wide" aria-labelledby="feedback-heading">
+      <h2 id="feedback-heading" data-i18n="feedback.heading">Feedback</h2>
+      <p class="hint" data-i18n="feedback.intro">Found a bug, a memo the checker got wrong, or have an idea? Tell me here.</p>
+      <form id="feedback-form" class="feedback-form">
+        <label for="feedback-message" data-i18n="feedback.message">Message</label>
+        <textarea id="feedback-message" rows="4" maxlength="5000" data-i18n-placeholder="feedback.messagePlaceholder"
+          placeholder="What happened, or what could be better?"></textarea>
+        <label for="feedback-contact" data-i18n="feedback.contact">Contact (optional)</label>
+        <input id="feedback-contact" type="text" autocomplete="email" maxlength="200" data-i18n-placeholder="feedback.contactPlaceholder"
+          placeholder="Email or WeChat, if you want a reply">
+        <label class="checkbox"><input id="feedback-attach" type="checkbox" checked>
+          <span data-i18n="feedback.attach">Attach the current scramble and memo (helps me debug)</span></label>
+        <div class="row">
+          <button id="feedback-send" type="submit" class="primary" data-i18n="feedback.send">Send feedback</button>
+        </div>
+        <p id="feedback-status" class="hint" role="status"></p>
+      </form>
+      <p class="hint" data-i18n="feedback.privacy">Visits are counted anonymously (no cookies, no personal data).</p>
     </section>
   </main>
 
