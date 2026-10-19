@@ -134,6 +134,8 @@ label { display: block; font-weight: 600; font-size: 0.9rem; margin: 10px 0 4px;
 .result dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 6px 0 0; }
 .result dt { color: var(--muted); }
 .result dd { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.spoiler { margin-top: 6px; }
+.spoiler summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .badge {
   display: inline-block;
   font-size: 0.75rem;

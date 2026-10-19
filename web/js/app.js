@@ -182,9 +182,15 @@ function memoLettersValid(edges, corners) {
   return true;
 }
 
+/** Collapsed until clicked, so a check never gives the answer away by itself. */
+function spoiler(label, html) {
+  return `<details class="spoiler"><summary>${label}</summary>${html}</details>`;
+}
+
 function check(event) {
   event.preventDefault();
-  if (timer.phase !== 'idle') return;
+  // Allowed while memorising too; locked once execution starts
+  if (timer.phase !== 'idle' && timer.phase !== 'memo') return;
   const edges = $('edge-memo').value;
   const corners = $('corner-memo').value;
   if (!memoLettersValid(edges, corners)) return;
@@ -192,13 +198,17 @@ function check(event) {
   // Practice check: not an attempt, and it doesn't reveal the reference memo,
   // so the scramble can still be timed afterwards (only Show answer blocks that)
   const result = checkMemo(state.cube, edges, corners);
+  const memorising = timer.phase === 'memo';
   const parity = result.has_parity ? '<span class="badge">parity</span>' : '';
   if (result.correct) {
-    showResult('ok', `<h3>Memo correct!${parity}</h3><p>You can now time this scramble.</p>`);
+    const next = memorising ? 'Blindfold on and start solving when ready.' : 'You can now time this scramble.';
+    showResult('ok', `<h3>Memo correct!${parity}</h3><p>${next}</p>`);
   } else {
+    // The messages name unsolved pieces, which is a hint, so they stay hidden until asked for
     const items = result.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('');
-    showResult('bad', `<h3>Memo wrong</h3><ul>${items}</ul>`
-      + '<p>Fix your memo and check again, or use Show answer to see the reference memo.</p>');
+    const next = memorising ? 'Fix your memo and check again.'
+      : 'Fix your memo and check again, or use Show answer to see the reference memo.';
+    showResult('bad', `<h3>Memo wrong</h3><p>${next}</p>${spoiler("Show what's wrong", `<ul>${items}</ul>`)}`);
   }
 }
 
@@ -206,7 +216,7 @@ function check(event) {
 
 const STATUS = {
   idle: 'Hold space (or touch the timer) and release to start memo.',
-  memo: 'Memorising… blindfold on, then hold and release space / the timer to start solving. Esc cancels.',
+  memo: 'Memorising… you can type and check your memo below. Blindfold on, then hold and release space / the timer to start solving. Esc cancels.',
   exec: 'Solving… press space / tap the timer to stop. Esc cancels.',
   done: 'Stopped. Enter the memo you used, then save as Solved or DNF. Esc discards.',
 };
@@ -229,7 +239,8 @@ function renderTimer() {
 
   // Lock anything that would reveal the answer or lose the attempt while timing
   const busy = timer.phase !== 'idle';
-  for (const id of ['new-scramble', 'toggle-own', 'check', 'reveal']) $(id).disabled = busy;
+  for (const id of ['new-scramble', 'toggle-own', 'retry', 'reveal']) $(id).disabled = busy;
+  $('check').disabled = busy && timer.phase !== 'memo';
   $('check-row').hidden = timer.phase === 'done';
   $('save-row').hidden = timer.phase !== 'done';
 
@@ -247,8 +258,8 @@ function timerDown() {
   const outcome = controls.down();
   if (outcome === 'blocked') {
     state.idleNote = state.attemptSaved
-      ? 'Attempt saved. Get a new scramble for the next one.'
-      : 'The answer for this scramble has been shown. Get a new scramble to time an attempt.';
+      ? 'Attempt saved. Use Try again to redo this scramble, or get a new one.'
+      : 'The answer for this scramble has been shown. Use Try again to redo it, or get a new scramble.';
   }
   if (outcome === 'stopped') $('edge-memo').focus();
   renderTimer();
@@ -292,16 +303,18 @@ function saveAttempt(solved) {
   const times = `<dl><dt>Total</dt><dd>${formatTime(attempt.totalTime)}</dd>`
     + `<dt>Memo</dt><dd>${formatTime(attempt.memoTime)}</dd>`
     + `<dt>Execution</dt><dd>${formatTime(attempt.execTime)}</dd></dl>`;
+  // What went wrong and the reference memo stay hidden, so Try again is still a fair retry
   const memoLine = attempt.memoCorrect
     ? '<p>Memo check: correct.</p>'
-    : `<p>Memo check: wrong.</p><ul>${attempt.memoMessages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`;
+    : `<p>Memo check: wrong.</p>${spoiler("Show what's wrong",
+      `<ul>${attempt.memoMessages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`)}`;
   showResult(solved ? 'ok' : 'bad',
     `<h3>Attempt #${attempt.number}: ${solved ? 'Solved' : 'DNF'}</h3>${times}${memoLine}`
-    + `<p>Reference memo:</p>${referenceHtml()}`);
+    + spoiler('Show reference memo', referenceHtml()));
 
   // Keep the final times on screen; the timer itself is ready for the next scramble
   state.lastTimes = timer.times();
-  state.idleNote = `Saved attempt #${attempt.number}. Get a new scramble for the next one.`;
+  state.idleNote = `Saved attempt #${attempt.number}. Try again, or get a new scramble for the next one.`;
   timer.reset();
   renderTimer();
 }
@@ -367,6 +380,8 @@ function bindSegmented(group, onChange) {
 }
 
 $('new-scramble').addEventListener('click', () => setScramble(generateScramble()));
+// Same scramble from the start: memo cleared, and it can be timed again
+$('retry').addEventListener('click', () => setScramble(state.scramble));
 
 $('toggle-own').addEventListener('click', () => {
   const form = $('own-form');
